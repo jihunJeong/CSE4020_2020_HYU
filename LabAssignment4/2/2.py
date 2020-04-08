@@ -23,7 +23,10 @@ def render(M):
     glBegin(GL_POINTS)
     glColor3ub(255, 255, 255)
     p = np.array([.5, .0, 1., 1.])
-    glVertex2fv( 2 *(M @ p)[:-2])
+    s = np.identity(4)
+    s[:2, :2] = [[2, 0],
+                [0, 2]]
+    glVertex2fv( (s @ M @ p)[:-2])
     glEnd()
 
     glBegin(GL_LINES)
