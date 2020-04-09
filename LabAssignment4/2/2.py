@@ -22,18 +22,15 @@ def render(M):
 
     glBegin(GL_POINTS)
     glColor3ub(255, 255, 255)
-    p = np.array([.5, .0, 1., 1.])
-    s = np.identity(4)
-    s[:2, :2] = [[2, 0],
-                [0, 2]]
-    glVertex2fv( (s @ M @ p)[:-2])
+    p = np.array([.5, .0, .0, 1.])
+    glVertex2fv( (M @ p)[:-2])
     glEnd()
 
     glBegin(GL_LINES)
     z = np.array([0., 0., 0., 1.])
     v = p - z
     glVertex2fv( (M @ v)[:-2])
-    glVertex2fv( (M @ z)[:-2])
+    glVertex2fv(z[:-2])
     glEnd()
 
 def main():
@@ -54,6 +51,9 @@ def main():
         M[:3, :3] = np.array([[np.cos(th), -np.sin(th),0.],
           [np.sin(th), np.cos(th),0.],
           [0., 0., 1]])
+        h = np.identity(4)
+        h[0][3] = 0.5
+        M = M @ h
         
         render(M)
         glfw.swap_buffers(window)
