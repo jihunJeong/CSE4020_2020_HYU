@@ -12,64 +12,6 @@ gCamHeight = 1.
 lightColor = (1.,1.,1.,1.)
 objectColor = (1.,1.,1.,1.)
 
-def drawCube_glVertex():
-    glBegin(GL_TRIANGLES)
-
-    glNormal3f(0,0,1) # v0, v2, v1, v0, v3, v2 normal
-    glVertex3f( -1 ,  1 ,  1 ) # v0 position
-    glVertex3f(  1 , -1 ,  1 ) # v2 position
-    glVertex3f(  1 ,  1 ,  1 ) # v1 position
-
-    glVertex3f( -1 ,  1 ,  1 ) # v0 position
-    glVertex3f( -1 , -1 ,  1 ) # v3 position
-    glVertex3f(  1 , -1 ,  1 ) # v2 position
-
-    glNormal3f(0,0,-1)
-    glVertex3f( -1 ,  1 , -1 ) # v4
-    glVertex3f(  1 ,  1 , -1 ) # v5
-    glVertex3f(  1 , -1 , -1 ) # v6
-
-    glVertex3f( -1 ,  1 , -1 ) # v4
-    glVertex3f(  1 , -1 , -1 ) # v6
-    glVertex3f( -1 , -1 , -1 ) # v7
-
-    glNormal3f(0,1,0)
-    glVertex3f( -1 ,  1 ,  1 ) # v0
-    glVertex3f(  1 ,  1 ,  1 ) # v1
-    glVertex3f(  1 ,  1 , -1 ) # v5
-
-    glVertex3f( -1 ,  1 ,  1 ) # v0
-    glVertex3f(  1 ,  1 , -1 ) # v5
-    glVertex3f( -1 ,  1 , -1 ) # v4
-
-    glNormal3f(0,-1,0)
-    glVertex3f( -1 , -1 ,  1 ) # v3
-    glVertex3f(  1 , -1 , -1 ) # v6
-    glVertex3f(  1 , -1 ,  1 ) # v2
-
-    glVertex3f( -1 , -1 ,  1 ) # v3
-    glVertex3f( -1 , -1 , -1 ) # v7
-    glVertex3f(  1 , -1 , -1 ) # v6
-
-    glNormal3f(1,0,0)
-    glVertex3f(  1 ,  1 ,  1 ) # v1
-    glVertex3f(  1 , -1 ,  1 ) # v2
-    glVertex3f(  1 , -1 , -1 ) # v6
-
-    glVertex3f(  1 ,  1 ,  1 ) # v1
-    glVertex3f(  1 , -1 , -1 ) # v6
-    glVertex3f(  1 ,  1 , -1 ) # v5
-
-    glNormal3f(-1,0,0)
-    glVertex3f( -1 ,  1 ,  1 ) # v0
-    glVertex3f( -1 , -1 , -1 ) # v7
-    glVertex3f( -1 , -1 ,  1 ) # v3
-
-    glVertex3f( -1 ,  1 ,  1 ) # v0
-    glVertex3f( -1 ,  1 , -1 ) # v4
-    glVertex3f( -1 , -1 , -1 ) # v7
-    glEnd()
-
 def createVertexArraySeparate():
     varr = np.array([
             (0,0,1),         # v0 normal
