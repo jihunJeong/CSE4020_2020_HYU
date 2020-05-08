@@ -109,18 +109,21 @@ def drawPeople():
 	#draw hips
 	glPushMatrix()
 	glTranslatef(0, 2.3, 0)
+	glTranslatef(0, 0, 0.25*t)
 	drawCubeArray(0.3, 0.1, 0.3)
 
 	#draw left upper legs
 	glPushMatrix()
 	glTranslatef(0.3, -0.8, 0)
-	glRotatef(-30, 1, 0, 0)
+	glRotatef(-20, 1, 0, 0)
+	glRotatef(np.sin(7*t)*30, 1, 0, 0)
 	drawCubeArray(0.3, 1.0, 0.3)
 
 	#draw left lower legs
 	glPushMatrix()
-	glTranslatef(0, -1.3, )
+	glTranslatef(0, -1., -0.5)
 	glRotatef(30, 1, 0, 0)
+	glRotatef(np.sin(7*t)*45+30, 1, 0, 0)
 	drawCubeArray(0.3, 0.8, 0.3)
 	glTranslatef(0, -0.5, 0.3)
 	drawCubeArray(0.3, 0.3, 0.3)
@@ -130,12 +133,15 @@ def drawPeople():
 	#draw right upper legs
 	glPushMatrix()
 	glTranslatef(-0.3, -0.8, 0)
-	glRotatef(30, 1, 0, 0)
+	glRotatef(-20, 1, 0, 0)
+	glRotatef(-np.sin(7*t)*30, 1, 0, 0)
 	drawCubeArray(0.3, 1.0, 0.3)
 
 	#draw right lower legs
 	glPushMatrix()
-	glTranslatef(0, -1.0, 0)
+	glTranslatef(0, -1.0, -0.5)
+	glRotatef(30, 1, 0, 0)
+	glRotatef(-np.sin(7*t)*45+30 ,1, 0, 0)
 	drawCubeArray(0.3, 0.8, 0.3)
 	glTranslatef(0, -0.5, 0.3)
 	drawCubeArray(0.3, 0.3, 0.3)
