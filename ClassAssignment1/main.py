@@ -5,7 +5,7 @@ import numpy as np
 
 gLeftButton = False
 gRightButton = False
-gFov = 130.
+gFov = 150.
 gCamwith = -45.
 gCamHeight = 50.
 gPointX = 0.
@@ -108,22 +108,19 @@ def drawPeople():
 
 	#draw hips
 	glPushMatrix()
-	glTranslatef(0, 2.3, 0)
-	glTranslatef(0, 0, 0.25*t)
+	glTranslatef(0, 2.3 + 0.1*np.sin(14*t), 0.5*t)
 	drawCubeArray(0.3, 0.1, 0.3)
 
 	#draw left upper legs
 	glPushMatrix()
 	glTranslatef(0.3, -0.8, 0)
-	glRotatef(-20, 1, 0, 0)
-	glRotatef(np.sin(7*t)*30, 1, 0, 0)
+	glRotatef(np.sin(7*t)*30 - 20, 1, 0, 0)
 	drawCubeArray(0.3, 1.0, 0.3)
 
 	#draw left lower legs
 	glPushMatrix()
 	glTranslatef(0, -1., -0.5)
-	glRotatef(30, 1, 0, 0)
-	glRotatef(np.sin(7*t)*45+30, 1, 0, 0)
+	glRotatef(np.sin(7*t)*45+60, 1, 0, 0)
 	drawCubeArray(0.3, 0.8, 0.3)
 	glTranslatef(0, -0.5, 0.3)
 	drawCubeArray(0.3, 0.3, 0.3)
@@ -133,15 +130,13 @@ def drawPeople():
 	#draw right upper legs
 	glPushMatrix()
 	glTranslatef(-0.3, -0.8, 0)
-	glRotatef(-20, 1, 0, 0)
-	glRotatef(-np.sin(7*t)*30, 1, 0, 0)
+	glRotatef(-np.sin(7*t)*30-20, 1, 0, 0)
 	drawCubeArray(0.3, 1.0, 0.3)
 
 	#draw right lower legs
 	glPushMatrix()
 	glTranslatef(0, -1.0, -0.5)
-	glRotatef(30, 1, 0, 0)
-	glRotatef(-np.sin(7*t)*45+30 ,1, 0, 0)
+	glRotatef(-np.sin(7*t)*45+60 ,1, 0, 0)
 	drawCubeArray(0.3, 0.8, 0.3)
 	glTranslatef(0, -0.5, 0.3)
 	drawCubeArray(0.3, 0.3, 0.3)
@@ -155,13 +150,13 @@ def drawPeople():
 	#draw left upper arms
 	glPushMatrix()
 	glTranslatef(0.4, 0.15, 0)
-	glRotatef(30, 1, 0, 0)
-	#glRotatef(t*(180/np.pi), 1, 0, 0)
+	glRotatef(-np.sin(7*t)*30-20, 1, 0, 0)
 	drawCubeArray(0.15, 0.5, 0.15)
 
-	#draw left lower arms
+	#draw left lower arms 
 	glPushMatrix()
 	glTranslatef(0, -0.6, 0)
+	glRotatef(-np.sin(7*t)*30-30 ,1, 0, 0)
 	drawCubeArray(0.15, 0.5, 0.15)
 	glPopMatrix()
 	glPopMatrix()
@@ -169,12 +164,13 @@ def drawPeople():
 	#draw right upper arms
 	glPushMatrix()
 	glTranslatef(-0.4, 0.15, 0)
-	glRotatef(-30, 1, 0, 0)
+	glRotatef(np.sin(7*t)*30-20, 1, 0, 0)
 	drawCubeArray(0.15, 0.5, 0.15)
 
 	#draw right lower arms
 	glPushMatrix()
 	glTranslatef(0, -0.6, 0)
+	glRotatef(np.sin(7*t)*30-30 ,1, 0, 0)
 	drawCubeArray(0.15, 0.5, 0.15)
 	glPopMatrix()
 	glPopMatrix()
@@ -250,6 +246,8 @@ def scroll_callback(windw, xoffset, yoffset):
     gFov -= 3*yoffset;
     if gFov <= 1:
     	gFov = 1
+    elif gFov >= 175:
+    	gFov = 175
 
 
 def main():
