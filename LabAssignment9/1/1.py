@@ -272,8 +272,6 @@ def key_callback(window, key, scancode, action, mods):
             gB = 0
             gC = 0
 
-    print(gA)
-
 gVertexArraySeparate = None
 def main():
     global gVertexArraySeparate
