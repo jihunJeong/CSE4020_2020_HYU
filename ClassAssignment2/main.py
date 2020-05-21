@@ -12,9 +12,9 @@ gPointX = 0.
 gPointY = 0.
 gXpos = 0
 gYpos = 0
-varr = None
-narr = None
-iarr = None
+varr = np.array([[0, 0, 0]], 'float32')
+narr = np.array([[0, 0, 0]], 'float32')
+iarr = np.array([[0, 0, 0]], 'float32')
 
 
 def drawFrame():
@@ -45,51 +45,19 @@ def drawGrid():
 
 	glEnd()
 
-def createVertexAndIndexArrayIndexed():
-    '''
-    varr = np.array([
-            (-0.5773502691896258, 0.5773502691896258, 0.5773502691896258),
-            ( -1 ,  1 ,  1 ), # v0
-            (0.8164965809277261, 0.4082482904638631, 0.4082482904638631),
-            (  1 ,  1 ,  1 ), # v1
-            (0.4082482904638631, -0.4082482904638631, 0.8164965809277261),
-            (  1 , -1 ,  1 ), # v2
-            (-0.4082482904638631, -0.8164965809277261, 0.4082482904638631),
-            ( -1 , -1 ,  1 ), # v3
-            (-0.4082482904638631, 0.4082482904638631, -0.8164965809277261),
-            ( -1 ,  1 , -1 ), # v4
-            (0.4082482904638631, 0.8164965809277261, -0.4082482904638631),
-            (  1 ,  1 , -1 ), # v5
-            (0.5773502691896258, -0.5773502691896258, -0.5773502691896258),
-            (  1 , -1 , -1 ), # v6
-            (-0.8164965809277261, -0.4082482904638631, -0.4082482904638631),
-            ( -1 , -1 , -1 ), # v7
-            ], 'float32')
-    iarr = np.array([
-            (0,2,1),
-            (0,3,2),
-            (4,5,6),
-            (4,6,7),
-            (0,1,5),
-            (0,5,4),
-            (3,6,2),
-            (3,7,6),
-            (1,2,6),
-            (1,6,5),
-            (0,7,3),
-            (0,4,7),
-            ])
-    '''
-    return varr, iarr
+def createVertexArraySeparate():
+	global iarr, varr, narr
 
-def drawCube_glDrawElements():
+	return iarr
+
+def glDrawArray():
     global varr, narr, iarr
-
+ 
     glEnableClientState(GL_VERTEX_ARRAY)
     glEnableClientState(GL_NORMAL_ARRAY)
-    glNormalPointer(GL_FLOAT, 3 * narr.itemsize, narr)
-    glVertexPointer(3, GL_FLOAT, 3*varr.itemsize, 0)
-    glDrawElements(GL_TRIANGLES, iarr.size, GL_UNSIGNED_INT, iarr)
+    glNormalPointer(GL_FLOAT, 6*iarr.itemsize, ctypes.c_void_p(iarr.ctypes.data + 3*iarr.itemsize))
+    glVertexPointer(3, GL_FLOAT, 6*iarr.itemsize, iarr)
+    glDrawArrays(GL_TRIANGLES, 0, int(iarr.size/6))
 
 def render():
     glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT)
@@ -115,7 +83,7 @@ def render():
     drawGrid()
 
     glColor3ub(255, 255, 255)
-    drawCube_glDrawElements()
+    glDrawArray()
     
 
 def mouse_button_callback(window, button, action, mods):
@@ -157,8 +125,8 @@ def scroll_callback(window, xoffset, yoffset):
     	gFov = 175
 
 def drop_callback(window, paths):
-    global varr, narr, iarr
-
+	global varr, narr, iarr
+	
 	paths = str(paths)
 	f = open(paths[2:-2], 'r')
 	vtx_cnt = 0
@@ -170,16 +138,20 @@ def drop_callback(window, paths):
 		input_list = list(line.split())
 
 		if input_list[0] == "v":
-			varr.append(list(map(int, input_list[1:])))
-        else if input_list[0] == "vn":
-            narr.append(list(map(int, input_list[1:])))
-        else if input_list[0] == "f":
-            iarr.append(list(map(int, input_list[1:])))
+			np.append(varr, np.array([[float(input_list[1]), float(input_list[2]), float(input_list[3])]], 'float32'), axis=0)
+		elif input_list[0] == "vn":
+			np.append(narr, list(map(float, input_list[1:])))
+		elif input_list[0] == "f":
+			print(varr)
+			for i in range(1, 4):
+				print(varr[int(input_list[i][0])-1])
+				np.append(iarr, varr[int(input_list[i][0])-1])
+				np.append(iarr, narr[int(input_list[i][-1])-1])
 
 	f.close()
 
 def main():
-	global gVertexArrayIndexed, gIndexArray
+    global gVertexArrayIndexed, gIndexArray
 
     if not glfw.init():
         return
@@ -195,6 +167,7 @@ def main():
     glfw.set_drop_callback(window, drop_callback)
 
     glfw.swap_interval(1)
+    iarr = createVertexArraySeparate()
 
     while not glfw.window_should_close(window):
         glfw.poll_events()
