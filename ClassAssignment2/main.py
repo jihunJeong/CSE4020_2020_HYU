@@ -12,6 +12,10 @@ gPointX = 0.
 gPointY = 0.
 gXpos = 0
 gYpos = 0
+varr = None
+narr = None
+iarr = None
+
 
 def drawFrame():
     glBegin(GL_LINES)
@@ -42,6 +46,7 @@ def drawGrid():
 	glEnd()
 
 def createVertexAndIndexArrayIndexed():
+    '''
     varr = np.array([
             (-0.5773502691896258, 0.5773502691896258, 0.5773502691896258),
             ( -1 ,  1 ,  1 ), # v0
@@ -74,16 +79,16 @@ def createVertexAndIndexArrayIndexed():
             (0,7,3),
             (0,4,7),
             ])
+    '''
     return varr, iarr
 
 def drawCube_glDrawElements():
-    global gVertexArrayIndexed, gIndexArray
-    varr = gVertexArrayIndexed
-    iarr = gIndexArray
+    global varr, narr, iarr
+
     glEnableClientState(GL_VERTEX_ARRAY)
     glEnableClientState(GL_NORMAL_ARRAY)
-    glNormalPointer(GL_FLOAT, 6 * varr.itemsize, varr)
-    glVertexPointer(3, GL_FLOAT, 6*varr.itemsize, ctypes.c_void_p(varr.ctypes.data + 3*varr.itemsize))
+    glNormalPointer(GL_FLOAT, 3 * narr.itemsize, narr)
+    glVertexPointer(3, GL_FLOAT, 3*varr.itemsize, 0)
     glDrawElements(GL_TRIANGLES, iarr.size, GL_UNSIGNED_INT, iarr)
 
 def render():
@@ -110,6 +115,7 @@ def render():
     drawGrid()
 
     glColor3ub(255, 255, 255)
+    drawCube_glDrawElements()
     
 
 def mouse_button_callback(window, button, action, mods):
@@ -151,6 +157,8 @@ def scroll_callback(window, xoffset, yoffset):
     	gFov = 175
 
 def drop_callback(window, paths):
+    global varr, narr, iarr
+
 	paths = str(paths)
 	f = open(paths[2:-2], 'r')
 	vtx_cnt = 0
@@ -163,10 +171,12 @@ def drop_callback(window, paths):
 
 		if input_list[0] == "v":
 			varr.append(list(map(int, input_list[1:])))
-	f.close()
+        else if input_list[0] == "vn":
+            narr.append(list(map(int, input_list[1:])))
+        else if input_list[0] == "f":
+            iarr.append(list(map(int, input_list[1:])))
 
-gVertexArrayIndexed = None
-gIndexArray = None
+	f.close()
 
 def main():
 	global gVertexArrayIndexed, gIndexArray
@@ -184,7 +194,6 @@ def main():
     glfw.set_scroll_callback(window, scroll_callback)
     glfw.set_drop_callback(window, drop_callback)
 
-    gVertexArrayIndexed, gIndexArray = createVertexAndIndexArrayIndexed()
     glfw.swap_interval(1)
 
     while not glfw.window_should_close(window):
