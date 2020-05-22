@@ -12,10 +12,10 @@ gPointX = 0.
 gPointY = 0.
 gXpos = 0
 gYpos = 0
-varr = np.array([[0, 0, 0]], 'float32')
-narr = np.array([[0, 0, 0]], 'float32')
-iarr = np.array([[0, 0, 0]], 'float32')
-
+varr = np.array([[0., 0., 0.]], 'float32')
+narr = np.array([[0., 0., 0.]], 'float32')
+iarr = np.array([[0., 0., 0.]], 'float32')
+gtoggle = [True, False]
 
 def drawFrame():
     glBegin(GL_LINES)
@@ -51,18 +51,23 @@ def createVertexArraySeparate():
 	return iarr
 
 def glDrawArray():
-    global varr, narr, iarr
- 
+    global varr, narr, iarr, gtoggle
+
     glEnableClientState(GL_VERTEX_ARRAY)
     glEnableClientState(GL_NORMAL_ARRAY)
-    glNormalPointer(GL_FLOAT, 6*iarr.itemsize, ctypes.c_void_p(iarr.ctypes.data + 3*iarr.itemsize))
-    glVertexPointer(3, GL_FLOAT, 6*iarr.itemsize, iarr)
-    glDrawArrays(GL_TRIANGLES, 0, int(iarr.size/6))
+    glVertexPointer(3, GL_FLOAT, 3*iarr.itemsize, ctypes.c_void_p(iarr.ctypes.data + 3*iarr.itemsize))
+    #glNormalPointer(GL_FLOAT, 6*iarr.itemsize, ctypes.c_void_p(iarr.ctypes.data + 6*iarr.itemsize))
+    glDrawArrays(GL_TRIANGLES, 0, int(iarr.size/3))
 
 def render():
     glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT)
     glEnable(GL_DEPTH_TEST)
-    glPolygonMode( GL_FRONT_AND_BACK, GL_LINE)
+
+    #set Toggle wireframe / solid by pressing Z key
+    if gtoggle[0]:
+    	glPolygonMode( GL_FRONT_AND_BACK, GL_LINE)
+    else :
+    	glPolygonMode( GL_FRONT_AND_BACK, GL_FILL)
 
     glMatrixMode(GL_PROJECTION)
     glLoadIdentity()
@@ -124,31 +129,69 @@ def scroll_callback(window, xoffset, yoffset):
     elif gFov >= 175:
     	gFov = 175
 
+def key_callback(window, key, scancode, action, mods):
+	global gtoggle
+
+	if action==glfw.PRESS or action==glfw.REPEAT:
+		if key == glfw.KEY_Z:
+			#Set toggle switch for glPolygon
+			gtoggle[0] = not gtoggle[0]
+		elif key == glfw.KEY_S:
+			gtoggle[1] = not gtoggle[1]
+
 def drop_callback(window, paths):
 	global varr, narr, iarr
+	varr = np.array([[0., 0., 0.]], 'float32')
+	narr = np.array([[0., 0., 0.]], 'float32')
+	iarr = np.array([[0., 0., 0.]], 'float32')
 	
+	#Get paths to read obj files and  file name
 	paths = str(paths)
+	file_name = list(paths.split('/'))[-1][:-2]
+	
+	#Open obj file
 	f = open(paths[2:-2], 'r')
-	vtx_cnt = 0
+	count3F, count4F, countMF = 0, 0, 0
+
 	while True:
 		line = f.readline()
 		if not line:
 			break
-		print(line)
+
 		input_list = list(line.split())
 
 		if input_list[0] == "v":
-			np.append(varr, np.array([[float(input_list[1]), float(input_list[2]), float(input_list[3])]], 'float32'), axis=0)
+			varr = np.append(varr, np.array([[float(input_list[1]), float(input_list[2]), float(input_list[3])]], 'float32'), axis=0)
 		elif input_list[0] == "vn":
-			np.append(narr, list(map(float, input_list[1:])))
+			narr = np.append(narr, np.array([[float(input_list[1]), float(input_list[2]), float(input_list[3])]], 'float32'), axis=0)
 		elif input_list[0] == "f":
-			print(varr)
-			for i in range(1, 4):
-				print(varr[int(input_list[i][0])-1])
-				np.append(iarr, varr[int(input_list[i][0])-1])
-				np.append(iarr, narr[int(input_list[i][-1])-1])
+			if input_list[len(input_list)-1] == '\n':
+				input_list = np.delete(input_list, len(input_list)-1,0)
+
+			#Count number of faces to print information
+			if len(input_list) == 4:
+				count3F += 1
+			elif len(input_list) == 5:
+				count4F += 1
+			elif len(input_list) > 5:
+				countMF += 1
+
+			for i in range(1, len(input_list)):
+
+				iarr = np.append(iarr, np.array([varr[int(input_list[i][0])]], 'float32'), axis=0)
+				#iarr = np.append(iarr, np.array([narr[int(input_list[i][-1])]], 'float32'), axis=0)
 
 	f.close()
+
+	#Print out the information of the obj file to console
+	print()
+	print("=================================================================")
+	print("File name : " + file_name)
+	print("Total number of faces : ", (count3F+count4F+countMF))
+	print("Number of faces with 3 vertics : ", (count3F))
+	print("Number of faces with 4 vertics : ", (count4F))
+	print("Number of faces with more than 4 vertics : ", (countMF))
+	print("=================================================================")
 
 def main():
     global gVertexArrayIndexed, gIndexArray
@@ -164,6 +207,7 @@ def main():
     glfw.set_mouse_button_callback(window, mouse_button_callback)
     glfw.set_cursor_pos_callback(window, cursor_position_callback)
     glfw.set_scroll_callback(window, scroll_callback)
+    glfw.set_key_callback(window, key_callback)
     glfw.set_drop_callback(window, drop_callback)
 
     glfw.swap_interval(1)
