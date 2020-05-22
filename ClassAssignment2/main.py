@@ -14,7 +14,9 @@ gXpos = 0
 gYpos = 0
 varr = np.array([[0., 0., 0.]], 'float32')
 narr = np.array([[0., 0., 0.]], 'float32')
-iarr = np.array([[0., 0., 0.]], 'float32')
+tarr = np.array([[0., 0., 0.]], 'float32')
+qarr = np.array([[0., 0., 0.]], 'float32')
+marr = np.array([[0., 0., 0.]], 'float32')
 gtoggle = [True, False]
 
 def drawFrame():
@@ -46,19 +48,32 @@ def drawGrid():
 	glEnd()
 
 def createVertexArraySeparate():
-	global iarr, varr, narr
+	global tarr, qarr, marr, varr, narr
 
-	return iarr
+	return tarr
 
 def glDrawArray():
-    global varr, narr, iarr, gtoggle
+    global varr, narr, tarr, qarr, marr, gtoggle
 
     glEnableClientState(GL_VERTEX_ARRAY)
     glEnableClientState(GL_NORMAL_ARRAY)
-    glVertexPointer(3, GL_FLOAT, 3*iarr.itemsize, ctypes.c_void_p(iarr.ctypes.data + 3*iarr.itemsize))
-    #glNormalPointer(GL_FLOAT, 6*iarr.itemsize, ctypes.c_void_p(iarr.ctypes.data + 6*iarr.itemsize))
-    glDrawArrays(GL_TRIANGLES, 0, int(iarr.size/3))
-
+    
+    #draw trianble mesh
+    glNormalPointer(GL_FLOAT, 6*tarr.itemsize, tarr)
+    glVertexPointer(3, GL_FLOAT, 6*tarr.itemsize, ctypes.c_void_p(tarr.ctypes.data + 3*tarr.itemsize))
+    glDrawArrays(GL_TRIANGLES, 0, int(tarr.size/6))
+    
+    
+    #draw quad mesh
+    glNormalPointer(GL_FLOAT, 6*qarr.itemsize, qarr)
+    glVertexPointer(3, GL_FLOAT, 6*qarr.itemsize, ctypes.c_void_p(qarr.ctypes.data + 3*qarr.itemsize))
+    glDrawArrays(GL_QUADS, 0, int(qarr.size/6))
+    
+    #draw polygon mesh
+    glNormalPointer(GL_FLOAT, 6*marr.itemsize, marr)
+    glVertexPointer(3, GL_FLOAT, 6*marr.itemsize, ctypes.c_void_p(marr.ctypes.data + 3*marr.itemsize))
+    glDrawArrays(GL_POLYGON, 0, int(marr.size/6))
+    
 def render():
     glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT)
     glEnable(GL_DEPTH_TEST)
@@ -140,10 +155,13 @@ def key_callback(window, key, scancode, action, mods):
 			gtoggle[1] = not gtoggle[1]
 
 def drop_callback(window, paths):
-	global varr, narr, iarr
+	global varr, narr, tarr, qarr, marr
+
 	varr = np.array([[0., 0., 0.]], 'float32')
 	narr = np.array([[0., 0., 0.]], 'float32')
-	iarr = np.array([[0., 0., 0.]], 'float32')
+	tarr = np.array([[0., 0., 0.]], 'float32')
+	qarr = np.array([[0., 0., 0.]], 'float32')
+	marr = np.array([[0., 0., 0.]], 'float32')
 	
 	#Get paths to read obj files and  file name
 	paths = str(paths)
@@ -168,21 +186,34 @@ def drop_callback(window, paths):
 			if input_list[len(input_list)-1] == '\n':
 				input_list = np.delete(input_list, len(input_list)-1,0)
 
+			sli = []
+			for i in range(1, len(input_list)):
+				sli.append(list(map(int, input_list[i].split('//'))))
+
 			#Count number of faces to print information
 			if len(input_list) == 4:
 				count3F += 1
+				for i in range(3):
+					tarr = np.append(tarr, np.array([narr[sli[i][1]]], 'float32'), axis=0)
+					tarr = np.append(tarr, np.array([varr[sli[i][0]]], 'float32'), axis=0)
+
 			elif len(input_list) == 5:
 				count4F += 1
-			elif len(input_list) > 5:
+				for i in range(4):
+					qarr = np.append(qarr, np.array([narr[sli[i][1]]], 'float32'), axis=0)
+					qarr = np.append(qarr, np.array([varr[sli[i][0]]], 'float32'), axis=0)
+
+			if len(input_list) > 5:
 				countMF += 1
-
-			for i in range(1, len(input_list)):
-
-				iarr = np.append(iarr, np.array([varr[int(input_list[i][0])]], 'float32'), axis=0)
-				#iarr = np.append(iarr, np.array([narr[int(input_list[i][-1])]], 'float32'), axis=0)
-
+				for i in range(32):
+					marr = np.append(marr, np.array([narr[sli[i][1]]], 'float32'), axis=0)
+					marr = np.append(marr, np.array([varr[sli[i][0]]], 'float32'), axis=0)
+				
 	f.close()
-
+	tarr = np.delete(tarr, [0], axis=0)
+	qarr = np.delete(qarr, [0], axis=0)
+	marr = np.delete(marr, [0], axis=0)
+				
 	#Print out the information of the obj file to console
 	print()
 	print("=================================================================")
@@ -211,7 +242,7 @@ def main():
     glfw.set_drop_callback(window, drop_callback)
 
     glfw.swap_interval(1)
-    iarr = createVertexArraySeparate()
+    tarr = createVertexArraySeparate()
 
     while not glfw.window_should_close(window):
         glfw.poll_events()
