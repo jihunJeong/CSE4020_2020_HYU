@@ -102,9 +102,60 @@ def render():
     drawFrame()
     drawGrid()
 
+    glEnable(GL_LIGHTING)   # try to uncomment: no lighting
+    glEnable(GL_LIGHT0)
+    glEnable(GL_LIGHT1)
+    glEnable(GL_LIGHT2)
+    glEnable(GL_LIGHT3)
+
+    glEnable(GL_NORMALIZE)  # try to uncomment: lighting will be incorrect if you scale the object
+    # glEnable(GL_RESCALE_NORMAL)
+
+    # Red light position
+    ambientLightColor = (.1,.1,.1,1.)
+
+    RedlightPos = (0.,np.sqrt(10**3),0.,1.)    # try to change 4th element to 0. or 1.
+    RedColor = (1.,0.,0.,1.)
+    glLightfv(GL_LIGHT0, GL_POSITION, RedlightPos)
+	# light intensity for each color channel
+    glLightfv(GL_LIGHT0, GL_DIFFUSE, RedColor)
+    glLightfv(GL_LIGHT0, GL_SPECULAR, RedColor)
+    glLightfv(GL_LIGHT0, GL_AMBIENT, ambientLightColor)
+    #Green light position
+    
+    GreenlightPos = (-10.,-10.,10.,1.)    # try to change 4th element to 0. or 1.
+    GreenlightColor = (0.,1.,0.,1.)
+    glLightfv(GL_LIGHT1, GL_POSITION, GreenlightPos)
+    
+    # light intensity for each color channel
+    glLightfv(GL_LIGHT1, GL_DIFFUSE, GreenlightColor)
+    glLightfv(GL_LIGHT1, GL_SPECULAR, GreenlightColor)
+    glLightfv(GL_LIGHT1, GL_AMBIENT, ambientLightColor)
+    #BLue light position
+    
+    BluelightPos = (10.,-10.,-10.,1.)    # try to change 4th element to 0. or 1.
+    BluelightColor = (0.,0.,1.,1.)
+    glLightfv(GL_LIGHT2, GL_POSITION, BluelightPos)
+   	
+   	# light intensity for each color channel
+    glLightfv(GL_LIGHT2, GL_DIFFUSE, BluelightColor)
+    glLightfv(GL_LIGHT2, GL_SPECULAR, BluelightColor)
+    glLightfv(GL_LIGHT2, GL_AMBIENT, ambientLightColor)
+
+    #White Light position
+    WhitelightPos = (10.,0.,10.,1.)
+    WhitelightColor = (0.75, 0.75, 0.75, 0.1)
+    glLightfv(GL_LIGHT3, GL_POSITION, WhitelightPos)
+
+	# light intensity for each color channel
+    glLightfv(GL_LIGHT3, GL_DIFFUSE, WhitelightColor)
+    glLightfv(GL_LIGHT3, GL_SPECULAR, WhitelightColor)
+    glLightfv(GL_LIGHT3, GL_AMBIENT, ambientLightColor)
+
     glColor3ub(255, 255, 255)
     glDrawArray()
-    
+
+    glDisable(GL_LIGHTING)
 
 def mouse_button_callback(window, button, action, mods):
 	global gLeftButton, gRightButton
