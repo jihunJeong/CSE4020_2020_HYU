@@ -92,7 +92,7 @@ def render():
     glMatrixMode(GL_MODELVIEW)
     glLoadIdentity()
 
-    gluLookAt(0, 0, 4, 0,0,0, 0,.1,0)
+    gluLookAt(0, 0, 8, 0,0,0, 0,.1,0)
 
     glTranslatef(gPointX, 0, 0)
     glTranslatef(0, gPointY, 0)
@@ -115,7 +115,7 @@ def render():
     ambientLightColor = (.1,.1,.1,1.)
 
     RedlightPos = (0.,np.sqrt(10**3),0.,1.)    # try to change 4th element to 0. or 1.
-    RedColor = (1.,0.,0.,1.)
+    RedColor = (1.,0.2,0.2,1.)
     glLightfv(GL_LIGHT0, GL_POSITION, RedlightPos)
 	# light intensity for each color channel
     glLightfv(GL_LIGHT0, GL_DIFFUSE, RedColor)
@@ -124,7 +124,7 @@ def render():
     #Green light position
     
     GreenlightPos = (-10.,-10.,10.,1.)    # try to change 4th element to 0. or 1.
-    GreenlightColor = (0.,1.,0.,1.)
+    GreenlightColor = (0.2,1.,0.2,1.)
     glLightfv(GL_LIGHT1, GL_POSITION, GreenlightPos)
     
     # light intensity for each color channel
@@ -134,7 +134,7 @@ def render():
     #BLue light position
     
     BluelightPos = (10.,-10.,-10.,1.)    # try to change 4th element to 0. or 1.
-    BluelightColor = (0.,0.,1.,1.)
+    BluelightColor = (0.2,0.2,1.,1.)
     glLightfv(GL_LIGHT2, GL_POSITION, BluelightPos)
    	
    	# light intensity for each color channel
@@ -228,31 +228,38 @@ def drop_callback(window, paths):
 			break
 
 		input_list = list(line.split())
+		if len(input_list) < 2:
+			continue
 
 		if input_list[0] == "v":
 			varr = np.append(varr, np.array([[float(input_list[1]), float(input_list[2]), float(input_list[3])]], 'float32'), axis=0)
 		elif input_list[0] == "vn":
 			narr = np.append(narr, np.array([[float(input_list[1]), float(input_list[2]), float(input_list[3])]], 'float32'), axis=0)
 		elif input_list[0] == "f":
+			print(input_list)
 			if input_list[len(input_list)-1] == '\n':
 				input_list = np.delete(input_list, len(input_list)-1,0)
 
-			sli = []
-			for i in range(1, len(input_list)):
-				sli.append(list(map(int, input_list[i].split('//'))))
-
-			#Count number of faces to print information
+			#Count number of faces to print 
 			if len(input_list) == 4:
 				count3F += 1
-				for i in range(3):
-					tarr = np.append(tarr, np.array([narr[sli[i][1]]], 'float32'), axis=0)
-					tarr = np.append(tarr, np.array([varr[sli[i][0]]], 'float32'), axis=0)
+				for i in range(1,4):
+					sli = input_list[i].split('/')
+					if len(sli) < 3:
+						tarr = np.append(tarr, np.array([varr[int(sli[0])]], 'float32'), axis=0)
+					else :
+						tarr = np.append(tarr, np.array([narr[int(sli[2])]], 'float32'), axis=0)
+					tarr = np.append(tarr, np.array([varr[int(sli[0])]], 'float32'), axis=0)
 
 			elif len(input_list) == 5:
 				count4F += 1
-				for i in range(4):
-					qarr = np.append(qarr, np.array([narr[sli[i][1]]], 'float32'), axis=0)
-					qarr = np.append(qarr, np.array([varr[sli[i][0]]], 'float32'), axis=0)
+				for i in range(1,5):
+					sli = input_list[i].split('/')
+					if len(sli) < 3:
+						qarr = np.append(qarr, np.array([varr[int(sli[0])]], 'float32'), axis=0)
+					else :
+						qarr = np.append(qarr, np.array([narr[int(sli[2])]], 'float32'), axis=0)
+					qarr = np.append(qarr, np.array([varr[int(sli[0])]], 'float32'), axis=0)
 
 			if len(input_list) > 5:
 				countMF += 1
