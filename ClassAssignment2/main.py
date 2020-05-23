@@ -236,7 +236,6 @@ def drop_callback(window, paths):
 		elif input_list[0] == "vn":
 			narr = np.append(narr, np.array([[float(input_list[1]), float(input_list[2]), float(input_list[3])]], 'float32'), axis=0)
 		elif input_list[0] == "f":
-			print(input_list)
 			if input_list[len(input_list)-1] == '\n':
 				input_list = np.delete(input_list, len(input_list)-1,0)
 
