@@ -5,13 +5,16 @@ import numpy as np
 
 gLeftButton = False
 gRightButton = False
-gFov = 150.
-gCamwith = -45.
-gCamHeight = 50.
-gPointX = 0.
-gPointY = 0.
+
+gFov = 5.
+gWidth = 800
+gHeight = 800
+
 gXpos = 0
 gYpos = 0
+
+gM = np.identity(4)
+
 varr = np.array([[0., 0., 0.]], 'float32')
 narr = np.array([[0., 0., 0.]], 'float32')
 tarr = np.array([[0., 0., 0.]], 'float32')
@@ -75,6 +78,7 @@ def glDrawArray():
     glDrawArrays(GL_POLYGON, 0, int(marr.size/6))
     
 def render():
+    global gWidth, gHeight
     glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT)
     glEnable(GL_DEPTH_TEST)
 
@@ -84,21 +88,17 @@ def render():
     else :
     	glPolygonMode( GL_FRONT_AND_BACK, GL_FILL)
 
-    glMatrixMode(GL_PROJECTION)
     glLoadIdentity()
-
-    gluPerspective(gFov, 1, 1, 10)
-
-    glMatrixMode(GL_MODELVIEW)
-    glLoadIdentity()
-
     gluLookAt(0, 0, 8, 0,0,0, 0,.1,0)
 
-    glTranslatef(gPointX, 0, 0)
-    glTranslatef(0, gPointY, 0)
-    glRotatef(gCamHeight, 1, 0, 0)
-    glRotatef(gCamwith, 0, 1, 0)
- 
+    glMatrixMode(GL_PROJECTION)
+    glLoadIdentity()
+    gluPerspective(gFov, gWidth/gHeight, 5, 1000)
+    glTranslatef(0., 0., -500)
+
+    glMatrixMode(GL_MODELVIEW)
+    glMultMatrixf(np.transpose(gM))
+
     drawFrame()
     drawGrid()
 
@@ -143,7 +143,7 @@ def render():
     glLightfv(GL_LIGHT2, GL_AMBIENT, ambientLightColor)
 
     #White Light position
-    WhitelightPos = (10.,0.,10.,1.)
+    WhitelightPos = (1000.,0.,1000.,1.)
     WhitelightColor = (0.75, 0.75, 0.75, 0.1)
     glLightfv(GL_LIGHT3, GL_POSITION, WhitelightPos)
 
@@ -170,30 +170,47 @@ def mouse_button_callback(window, button, action, mods):
 
 
 def cursor_position_callback(window, xoffset, yoffset):
-	global gCamwith, gCamHeight, gLeftButton, gRightButton
-	global gXpos, gYpos, gPointX, gPointY
-	changedX = gXpos - xoffset
-	changedY = gYpos - yoffset
-    
-	if gLeftButton == True and gRightButton == False:
-		gCamwith -= 5 *np.radians(changedX)
-		gCamHeight -= 5 * np.radians(changedY)
+    global gM, gLeftButton, gRightButton
+    global gXpos, gYpos
 
-	if gRightButton == True and gLeftButton == False:
-		gPointX -= 0.005*changedX
-		gPointY += 0.005*changedY
+    if gLeftButton == True and gRightButton == False:
+        changedX = xoffset - gXpos
+        changedY = yoffset - gYpos
 
-	gXpos = xoffset
-	gYpos = yoffset
+        rotateC = np.cos(changedX*np.pi/180)
+        rotateS = np.sin(changedX*np.pi/180)
+        rotateX = np.array([[rotateC, 0, rotateS, 0],
+                                [0, 1, 0, 0],
+                                [-rotateS, 0, rotateC, 0],
+                                [0, 0, 0, 1]])
+
+        rotateC = np.cos(changedY*np.pi/180)
+        rotateS = np.sin(changedY*np.pi/180)
+        rotateY = np.array([[1, 0, 0, 0],
+                  [0, rotateC, -rotateS, 0],
+                  [0, rotateS, rotateC, 0],
+                  [0, 0, 0, 1]])
+        
+        gM = rotateY @ gM
+        gM = rotateX @ gM
+
+    if gRightButton == True and gLeftButton == False:
+	    transX = xoffset - gXpos
+	    transY = yoffset - gYpos
+	    transXY = np.array([[1, 0, 0, transX/100],
+                           [0, 1, 0, -transY/100],
+                           [0, 0, 1, 0],
+                           [0, 0, 0, 1]])
+	    gM = transXY @ gM
+
+    gXpos = xoffset
+    gYpos = yoffset
 
 
 def scroll_callback(window, xoffset, yoffset):
     global gFov
-    gFov -= 3*yoffset;
-    if gFov <= 1:
-    	gFov = 1
-    elif gFov >= 175:
-    	gFov = 175
+    gFov -= yoffset;
+
 
 def key_callback(window, key, scancode, action, mods):
 	global gtoggle
@@ -281,6 +298,13 @@ def drop_callback(window, paths):
 	print("Number of faces with more than 4 vertics : ", (countMF))
 	print("=================================================================")
 
+def size_callback(window, width, height):
+	global gWidth, gHeight
+	gWidth = width
+	gHeight = height
+	glViewport(0, 0, gWidth, gHeight)
+
+
 def main():
     global gVertexArrayIndexed, gIndexArray
 
@@ -296,6 +320,7 @@ def main():
     glfw.set_cursor_pos_callback(window, cursor_position_callback)
     glfw.set_scroll_callback(window, scroll_callback)
     glfw.set_key_callback(window, key_callback)
+    glfw.set_framebuffer_size_callback(window, size_callback)
     glfw.set_drop_callback(window, drop_callback)
 
     glfw.swap_interval(1)
