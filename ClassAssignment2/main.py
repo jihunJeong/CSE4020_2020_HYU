@@ -115,6 +115,7 @@ def render():
     glEnable(GL_LIGHT1)
     glEnable(GL_LIGHT2)
     glEnable(GL_LIGHT3)
+    glEnable(GL_LIGHT4)
 
     glEnable(GL_NORMALIZE)  # try to uncomment: lighting will be incorrect if you scale the object
     # glEnable(GL_RESCALE_NORMAL)
@@ -150,7 +151,7 @@ def render():
     glLightfv(GL_LIGHT2, GL_SPECULAR, BluelightColor)
     glLightfv(GL_LIGHT2, GL_AMBIENT, ambientLightColor)
 
-    #White Light position
+    #White Light position 1
     WhitelightPos = (1000.,0.,1000.,1.)
     WhitelightColor = (0.75, 0.75, 0.75, 0.1)
     glLightfv(GL_LIGHT3, GL_POSITION, WhitelightPos)
@@ -159,6 +160,16 @@ def render():
     glLightfv(GL_LIGHT3, GL_DIFFUSE, WhitelightColor)
     glLightfv(GL_LIGHT3, GL_SPECULAR, WhitelightColor)
     glLightfv(GL_LIGHT3, GL_AMBIENT, ambientLightColor)
+	
+	#White Light position 2
+    WhitelightPos = (-1000.,0.,-1000.,1.)
+    WhitelightColor = (0.75, 0.75, 0.75, 0.1)
+    glLightfv(GL_LIGHT4, GL_POSITION, WhitelightPos)
+
+	# light intensity for each color channel
+    glLightfv(GL_LIGHT4, GL_DIFFUSE, WhitelightColor)
+    glLightfv(GL_LIGHT4, GL_SPECULAR, WhitelightColor)
+    glLightfv(GL_LIGHT4, GL_AMBIENT, ambientLightColor)
 
     glColor3ub(255, 255, 255)
     glDrawArray()
