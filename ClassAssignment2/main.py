@@ -197,11 +197,7 @@ def cursor_position_callback(window, xoffset, yoffset):
 
 def scroll_callback(window, xoffset, yoffset):
     global gFov
-    gFov -= 3*yoffset;
-    if gFov <= 1:
-    	gFov = 1
-    elif gFov >= 175:
-    	gFov = 175
+    gFov -= yoffset
 
 def key_callback(window, key, scancode, action, mods):
 	global gtoggle
