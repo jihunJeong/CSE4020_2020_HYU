@@ -277,7 +277,7 @@ def render():
     glLoadIdentity()
 
     gluPerspective(gFov, gWidth/gHeight, 5, 1000)
-    glTranslatef(0., 0., -300)
+    glTranslatef(0., 0., -800)
     #glRotatef(45, 1, 0, 0)
 
     glMatrixMode(GL_MODELVIEW)
@@ -301,7 +301,7 @@ def render():
 
     ambientLightColor = (.1,.1,.1,.1,)
     #White Light position 1
-    WhitelightPos = (10000.,0.,10000.,1.)
+    WhitelightPos = (20000.,0.,20000.,1.)
     WhitelightColor = (0.75, 0.75, 0.75, 0.1)
     glLightfv(GL_LIGHT0, GL_POSITION, WhitelightPos)
 
@@ -311,7 +311,7 @@ def render():
     glLightfv(GL_LIGHT0, GL_AMBIENT, ambientLightColor)
 	
 	#White Light position 2
-    WhitelightPos = (-10000.,0.,-10000.,1.)
+    WhitelightPos = (-20000.,0.,-20000.,1.)
     WhitelightColor = (0.75, 0.75, 0.75, 0.1)
     glLightfv(GL_LIGHT1, GL_POSITION, WhitelightPos)
 
@@ -321,7 +321,7 @@ def render():
     glLightfv(GL_LIGHT1, GL_AMBIENT, ambientLightColor)
 
     #White Light position 3
-    WhitelightPos = (0.,0.,10000.,1.)
+    WhitelightPos = (0.,0.,20000.,1.)
     WhitelightColor = (0.75, 0.75, 0.75, 0.1)
     glLightfv(GL_LIGHT2, GL_POSITION, WhitelightPos)
 
