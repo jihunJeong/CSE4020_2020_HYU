@@ -40,7 +40,6 @@ joint_name = []
 joint_motion = []
 body_stack = []
 body_offset = []
-continue_switch = True
 start_switch = False
 t = 1 		# motion index at t times
 
@@ -261,8 +260,6 @@ def drawbody():
 		elif body_stack[i] == "}":
 			glPopMatrix()
 	if start_switch == False:
-		t = 1
-	elif continue_switch == False:
 		t += 0
 	else :
 		t += 1
@@ -280,8 +277,8 @@ def render():
     glLoadIdentity()
 
     gluPerspective(gFov, gWidth/gHeight, 5, 1000)
-    glTranslatef(0., 0., -15)
-    glRotatef(45, 1, 0, 0)
+    glTranslatef(0., 0., -300)
+    #glRotatef(45, 1, 0, 0)
 
     glMatrixMode(GL_MODELVIEW)
     glLoadIdentity()
@@ -297,13 +294,14 @@ def render():
     glEnable(GL_LIGHTING)   # try to uncomment: no lighting
     glEnable(GL_LIGHT0)
     glEnable(GL_LIGHT1)
+    glEnable(GL_LIGHT2)
 
     glEnable(GL_NORMALIZE)  # try to uncomment: lighting will be incorrect if you scale the object
     # glEnable(GL_RESCALE_NORMAL)
 
     ambientLightColor = (.1,.1,.1,.1,)
     #White Light position 1
-    WhitelightPos = (1000.,0.,1000.,1.)
+    WhitelightPos = (10000.,0.,10000.,1.)
     WhitelightColor = (0.75, 0.75, 0.75, 0.1)
     glLightfv(GL_LIGHT0, GL_POSITION, WhitelightPos)
 
@@ -313,7 +311,7 @@ def render():
     glLightfv(GL_LIGHT0, GL_AMBIENT, ambientLightColor)
 	
 	#White Light position 2
-    WhitelightPos = (-1000.,0.,-1000.,1.)
+    WhitelightPos = (-10000.,0.,-10000.,1.)
     WhitelightColor = (0.75, 0.75, 0.75, 0.1)
     glLightfv(GL_LIGHT1, GL_POSITION, WhitelightPos)
 
@@ -321,6 +319,17 @@ def render():
     glLightfv(GL_LIGHT1, GL_DIFFUSE, WhitelightColor)
     glLightfv(GL_LIGHT1, GL_SPECULAR, WhitelightColor)
     glLightfv(GL_LIGHT1, GL_AMBIENT, ambientLightColor)
+
+    #White Light position 3
+    WhitelightPos = (0.,0.,10000.,1.)
+    WhitelightColor = (0.75, 0.75, 0.75, 0.1)
+    glLightfv(GL_LIGHT2, GL_POSITION, WhitelightPos)
+
+	# light intensity for each color channel
+    glLightfv(GL_LIGHT2, GL_DIFFUSE, WhitelightColor)
+    glLightfv(GL_LIGHT2, GL_SPECULAR, WhitelightColor)
+    glLightfv(GL_LIGHT2, GL_AMBIENT, ambientLightColor)
+
 
     glColor3ub(255, 255, 255)
     
@@ -369,12 +378,8 @@ def key_callback(window, key, scancode, action, mods):
 		if key == glfw.KEY_Z:
 			#Set toggle switch for glPolygon
 			gtoggle[0] = not gtoggle[0]
-		elif key == glfw.KEY_S:
-			continue_switch = not continue_switch
 		elif key == glfw.KEY_SPACE:
 			start_switch = not start_switch
-			if start_switch == False:
-				continue_switch = True
 def hierarchy(input_list):
 	global XPOSTION, YPOSTION, ZPOSTION, ZROTATION, XROTATION, YROTATION
 
