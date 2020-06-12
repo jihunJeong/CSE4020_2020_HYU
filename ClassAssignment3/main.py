@@ -8,27 +8,41 @@ gLeftButton = False
 gRightButton = False
 
 #For scroll callback
-gFov = 150.
+gFov = 50.
+
+#For gluPerspective
+gWidth = 800
+gHeight = 800
 
 #For cursor position callback
-gCamwith = -45.
-gCamHeight = 50.
+gCamwith = -0.
+gCamHeight = 0.
 gPointX = 0.
 gPointY = 0.
 gXpos = 0
 gYpos = 0
 
-#For gluPerspective
-gWidth = 1
-gHeight = 1
+#For toggle Switch
+gtoggle = [True, False]
 
 #For Bvh channel Macro
-ZROTATION = 1
-XROTATION = 2
-YROTATION = 3
-XPOSTION = 4
-YPOSTION = 5
-ZPOSTION = 6
+XROTATION = 1
+YROTATION = 2
+ZROTATION = 3
+XPOSITION = 4
+YPOSITION = 5
+ZPOSITION = 6
+
+#For Bvh Global Variable
+gfps = 0.
+gframe_cnt = 0
+joint_name = []
+joint_motion = []
+body_stack = []
+body_offset = []
+continue_switch = True
+start_switch = False
+t = 1 		# motion index at t times
 
 def drawFrame():
     glBegin(GL_LINES)
@@ -58,47 +72,219 @@ def drawGrid():
 
 	glEnd()
 
-def createVertexArraySeparate():
-	global tarr, qarr, marr, varr, narr
+def drawbody():
+	global joint_motion, body_offset, body_stacks, t
 
-	return tarr
+	oix = 0		# offset index
+	ix = 0		# motion type index
 
-def glDrawArray():
-    global varr, narr, tarr, qarr, marr, gtoggle
+	for i in range(len(body_stack)):
+		if body_stack[i] == "{":
+			glPushMatrix()
+			o1 = np.array(body_offset[0])
+			o2 = o1 + np.array(body_offset[oix])
 
-    glEnableClientState(GL_VERTEX_ARRAY)
-    glEnableClientState(GL_NORMAL_ARRAY)
-    
-    #draw trianble mesh
-    glNormalPointer(GL_FLOAT, 6*tarr.itemsize, tarr)
-    glVertexPointer(3, GL_FLOAT, 6*tarr.itemsize, ctypes.c_void_p(tarr.ctypes.data + 3*tarr.itemsize))
-    glDrawArrays(GL_TRIANGLES, 0, int(tarr.size/6))
-    
-    
-    #draw quad mesh
-    glNormalPointer(GL_FLOAT, 6*qarr.itemsize, qarr)
-    glVertexPointer(3, GL_FLOAT, 6*qarr.itemsize, ctypes.c_void_p(qarr.ctypes.data + 3*qarr.itemsize))
-    glDrawArrays(GL_QUADS, 0, int(qarr.size/6))
-    
-    #draw polygon mesh
-    glNormalPointer(GL_FLOAT, 6*marr.itemsize, marr)
-    glVertexPointer(3, GL_FLOAT, 6*marr.itemsize, ctypes.c_void_p(marr.ctypes.data + 3*marr.itemsize))
-    glDrawArrays(GL_POLYGON, 0, int(marr.size/6))
-    
+			#Draw the skeleton by line segments
+			glBegin(GL_LINES)
+			glColor3ub(255,255,0)
+			glVertex3fv(o1)
+			glVertex3fv(o2)
+			glEnd()
+
+			oarr = np.array(body_offset[oix])
+			glTranslatef(oarr[0], oarr[1], oarr[2])
+
+			oix += 1
+
+			if body_stack[i+1] == "}":
+				continue
+			elif i == 0:
+				# Root Joint
+				#Transition joint
+				if int(joint_motion[ix][0]) == 4:
+					transX = float(joint_motion[ix][t])
+					if int(joint_motion[ix+1][0]) == 5 and int(joint_motion[ix+2][0]) == 6:
+						transY = float(joint_motion[ix+1][t])
+						transZ = float(joint_motion[ix+2][t])
+					else :
+						transZ = float(joint_motion[ix+1][t])
+						transY = float(joint_motion[ix+2][t])
+				elif int(joint_motion[ix][0]) == 5:
+					transY = float(joint_motion[ix][t])
+					if int(joint_motion[ix+1][0]) == 4 and int(joint_motion[ix+2][0]) == 6:
+						transX = float(joint_motion[ix+1][t])
+						transZ = float(joint_motion[ix+2][t])
+					else :
+						transZ = float(joint_motion[ix+1][t])
+						transX = float(joint_motion[ix+2][t])
+				elif int(joint_motion[ix][0]) == 6:
+					transZ = float(joint_motion[ix][t])
+					if int(joint_motion[ix+1][0]) == 4 and int(joint_motion[ix+2][0]) == 5:
+						transX = float(joint_motion[ix+1][t])
+						transY = float(joint_motion[ix+2][t])
+					else :
+						transY = float(joint_motion[ix+1][t])
+						transX = float(joint_motion[ix+2][t])
+				glTranslatef(transX, transY, transZ)
+
+				#Rotate joint
+				if int(joint_motion[ix+3][0]) == 1:
+					if int(joint_motion[ix+4][0]) == 2 and int(joint_motion[ix+5][0]) == 3:
+						#XYZ Euler angles
+						glRotatef(float(joint_motion[ix+3][t]), 1,0,0)
+						glRotatef(float(joint_motion[ix+4][t]), 0,1,0)
+						glRotatef(float(joint_motion[ix+5][t]), 0,0,1)
+					elif int(joint_motion[ix+4][0]) == 2 and int(joint_motion[ix+5][0]) == 1:
+						#XYX Euler angles
+						glRotatef(float(joint_motion[ix+3][t]), 1,0,0)
+						glRotatef(float(joint_motion[ix+4][t]), 0,1,0)
+						glRotatef(float(joint_motion[ix+5][t]), 1,0,0)
+					elif int(joint_motion[ix+4][0]) == 3 and int(joint_motion[ix+5][0]) == 2:
+						#XZY Euler angles
+						glRotatef(float(joint_motion[ix+3][t]), 1,0,0)
+						glRotatef(float(joint_motion[ix+4][t]), 0,0,1)
+						glRotatef(float(joint_motion[ix+5][t]), 0,1,0)
+					elif int(joint_motion[ix+4][0]) == 3 and int(joint_motion[ix+5][0]) == 1:
+						#XZX Euler angles
+						glRotatef(float(joint_motion[ix+3][t]), 1,0,0)
+						glRotatef(float(joint_motion[ix+4][t]), 0,0,1)
+						glRotatef(float(joint_motion[ix+5][t]), 1,0,0)
+				elif int(joint_motion[ix+3][0]) == 2:
+					if int(joint_motion[ix+4][0]) == 3 and int(joint_motion[ix+5][0]) == 1:
+						#YZX Euler angles
+						glRotatef(float(joint_motion[ix+3][t]), 0,1,0)
+						glRotatef(float(joint_motion[ix+4][t]), 0,0,1)
+						glRotatef(float(joint_motion[ix+5][t]), 1,0,0)
+					elif int(joint_motion[ix+4][0]) == 3 and int(joint_motion[ix+5][0]) == 2:
+						#YZY Euler angles
+						glRotatef(float(joint_motion[ix+3][t]), 0,1,0)
+						glRotatef(float(joint_motion[ix+4][t]), 0,0,1)
+						glRotatef(float(joint_motion[ix+5][t]), 0,1,0)
+					elif int(joint_motion[ix+4][0]) == 1 and int(joint_motion[ix+5][0]) == 3:
+						#YXZ Euler angles
+						glRotatef(float(joint_motion[ix+3][t]), 0,1,0)
+						glRotatef(float(joint_motion[ix+4][t]), 1,0,0)
+						glRotatef(float(joint_motion[ix+5][t]), 0,0,1)
+					elif int(joint_motion[ix+4][0]) == 1 and int(joint_motion[ix+5][0]) == 2:
+						#YXY Euler angles
+						glRotatef(float(joint_motion[ix+3][t]), 0,1,0)
+						glRotatef(float(joint_motion[ix+4][t]), 1,0,0)
+						glRotatef(float(joint_motion[ix+5][t]), 0,1,0)						
+				elif int(joint_motion[ix+3][0]) == 3:
+					if int(joint_motion[ix+4][0]) == 1 and int(joint_motion[ix+5][0]) == 2:
+						#ZXY Euler angles
+						glRotatef(float(joint_motion[ix+3][t]), 0,0,1)
+						glRotatef(float(joint_motion[ix+4][t]), 1,0,0)
+						glRotatef(float(joint_motion[ix+5][t]), 0,1,0)
+					elif int(joint_motion[ix+4][0]) == 1 and int(joint_motion[ix+5][0]) == 3:
+						#ZXZ Euler angles
+						glRotatef(float(joint_motion[ix+3][t]), 0,0,1)
+						glRotatef(float(joint_motion[ix+4][t]), 1,0,0)
+						glRotatef(float(joint_motion[ix+5][t]), 0,0,1)
+					elif int(joint_motion[ix+4][0]) == 2 and int(joint_motion[ix+5][0]) == 1:
+						#ZYX Euler angles
+						glRotatef(float(joint_motion[ix+3][t]), 0,0,1)
+						glRotatef(float(joint_motion[ix+4][t]), 0,1,0)
+						glRotatef(float(joint_motion[ix+5][t]), 1,0,0)
+					elif int(joint_motion[ix+4][0]) == 2 and int(joint_motion[ix+5][0]) == 3:
+						#ZYZ Euler angles
+						glRotatef(float(joint_motion[ix+3][t]), 0,0,1)
+						glRotatef(float(joint_motion[ix+4][t]), 0,1,0)
+						glRotatef(float(joint_motion[ix+5][t]), 0,0,1)
+				ix += 6	
+			else :
+				#Rotate joint except Root
+				if int(joint_motion[ix][0]) == 1:
+					if int(joint_motion[ix+1][0]) == 2 and int(joint_motion[ix+2][0]) == 3:
+						#XYZ Euler angles
+						glRotatef(float(joint_motion[ix][t]), 1,0,0)
+						glRotatef(float(joint_motion[ix+1][t]), 0,1,0)
+						glRotatef(float(joint_motion[ix+2][t]), 0,0,1)
+					elif int(joint_motion[ix+1][0]) == 2 and int(joint_motion[ix+2][0]) == 1:
+						#XYX Euler angles
+						glRotatef(float(joint_motion[ix][t]), 1,0,0)
+						glRotatef(float(joint_motion[ix+1][t]), 0,1,0)
+						glRotatef(float(joint_motion[ix+2][t]), 1,0,0)
+					elif int(joint_motion[ix+1][0]) == 3 and int(joint_motion[ix+2][0]) == 2:
+						#XZY Euler angles
+						glRotatef(float(joint_motion[ix][t]), 1,0,0)
+						glRotatef(float(joint_motion[ix+1][t]), 0,0,1)
+						glRotatef(float(joint_motion[ix+2][t]), 0,1,0)
+					elif int(joint_motion[ix+1][0]) == 3 and int(joint_motion[ix+2][0]) == 1:
+						#XZX Euler angles
+						glRotatef(float(joint_motion[ix][t]), 1,0,0)
+						glRotatef(float(joint_motion[ix+1][t]), 0,0,1)
+						glRotatef(float(joint_motion[ix+2][t]), 1,0,0)
+				elif int(joint_motion[ix][0]) == 2:
+					if int(joint_motion[ix+1][0]) == 3 and int(joint_motion[ix+2][0]) == 1:
+						#YZX Euler angles
+						glRotatef(float(joint_motion[ix][t]), 0,1,0)
+						glRotatef(float(joint_motion[ix+1][t]), 0,0,1)
+						glRotatef(float(joint_motion[ix+2][t]), 1,0,0)
+					elif int(joint_motion[ix+1][0]) == 3 and int(joint_motion[ix+2][0]) == 2:
+						#YZY Euler angles
+						glRotatef(float(joint_motion[ix][t]), 0,1,0)
+						glRotatef(float(joint_motion[ix+1][t]), 0,0,1)
+						glRotatef(float(joint_motion[ix+2][t]), 0,1,0)
+					elif int(joint_motion[ix+1][0]) == 1 and int(joint_motion[ix+2][0]) == 3:
+						#YXZ Euler angles
+						glRotatef(float(joint_motion[ix][t]), 0,1,0)
+						glRotatef(float(joint_motion[ix+1][t]), 1,0,0)
+						glRotatef(float(joint_motion[ix+2][t]), 0,0,1)
+					elif int(joint_motion[ix+1][0]) == 1 and int(joint_motion[ix+2][0]) == 2:
+						#YXY Euler angles
+						glRotatef(float(joint_motion[ix][t]), 0,1,0)
+						glRotatef(float(joint_motion[ix+1][t]), 1,0,0)
+						glRotatef(float(joint_motion[ix+2][t]), 0,1,0)						
+				elif int(joint_motion[ix][0]) == 3:
+					if int(joint_motion[ix+1][0]) == 1 and int(joint_motion[ix+2][0]) == 2:
+						#ZXY Euler angles
+						glRotatef(float(joint_motion[ix][t]), 0,0,1)
+						glRotatef(float(joint_motion[ix+1][t]), 1,0,0)
+						glRotatef(float(joint_motion[ix+2][t]), 0,1,0)
+					elif int(joint_motion[ix+1][0]) == 1 and int(joint_motion[ix+2][0]) == 3:
+						#ZXZ Euler angles
+						glRotatef(float(joint_motion[ix][t]), 0,0,1)
+						glRotatef(float(joint_motion[ix+1][t]), 1,0,0)
+						glRotatef(float(joint_motion[ix+2][t]), 0,0,1)
+					elif int(joint_motion[ix+1][0]) == 2 and int(joint_motion[ix+2][0]) == 1:
+						#ZYX Euler angles
+						glRotatef(float(joint_motion[ix][t]), 0,0,1)
+						glRotatef(float(joint_motion[ix+1][t]), 0,1,0)
+						glRotatef(float(joint_motion[ix+2][t]), 1,0,0)
+					elif int(joint_motion[ix+1][0]) == 2 and int(joint_motion[ix+2][0]) == 3:
+						#ZYZ Euler angles
+						glRotatef(float(joint_motion[ix][t]), 0,0,1)
+						glRotatef(float(joint_motion[ix+1][t]), 0,1,0)
+						glRotatef(float(joint_motion[ix+2][t]), 0,0,1)
+				ix += 3
+		elif body_stack[i] == "}":
+			glPopMatrix()
+	if start_switch == False:
+		t = 1
+	elif continue_switch == False:
+		t += 0
+	else :
+		t += 1
+	if t == (int(gframe_cnt)-1):
+		t = 2
+
 def render():
-    global gWidth, gHeight
     glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT)
     glEnable(GL_DEPTH_TEST)
 
+    glLoadIdentity()
+    gluLookAt(0, 0, 8, 0,0,0, 0,.1,0)
+   
     glMatrixMode(GL_PROJECTION)
     glLoadIdentity()
 
     gluPerspective(gFov, gWidth/gHeight, 5, 1000)
+    glTranslatef(0., 0., -15)
+    glRotatef(45, 1, 0, 0)
 
     glMatrixMode(GL_MODELVIEW)
     glLoadIdentity()
-
-    gluLookAt(0, 0, 8, 0,0,0, 0,.1,0)
 
     glTranslatef(gPointX, 0, 0)
     glTranslatef(0, gPointY, 0)
@@ -111,55 +297,34 @@ def render():
     glEnable(GL_LIGHTING)   # try to uncomment: no lighting
     glEnable(GL_LIGHT0)
     glEnable(GL_LIGHT1)
-    glEnable(GL_LIGHT2)
-    glEnable(GL_LIGHT3)
 
     glEnable(GL_NORMALIZE)  # try to uncomment: lighting will be incorrect if you scale the object
     # glEnable(GL_RESCALE_NORMAL)
 
-    # Red light position
-    ambientLightColor = (.1,.1,.1,1.)
-
-    RedlightPos = (0.,np.sqrt(10**3),0.,1.)    # try to change 4th element to 0. or 1.
-    RedColor = (1.,0.2,0.2,1.)
-    glLightfv(GL_LIGHT0, GL_POSITION, RedlightPos)
-	# light intensity for each color channel
-    glLightfv(GL_LIGHT0, GL_DIFFUSE, RedColor)
-    glLightfv(GL_LIGHT0, GL_SPECULAR, RedColor)
-    glLightfv(GL_LIGHT0, GL_AMBIENT, ambientLightColor)
-    #Green light position
-    
-    GreenlightPos = (-10.,-10.,10.,1.)    # try to change 4th element to 0. or 1.
-    GreenlightColor = (0.2,1.,0.2,1.)
-    glLightfv(GL_LIGHT1, GL_POSITION, GreenlightPos)
-    
-    # light intensity for each color channel
-    glLightfv(GL_LIGHT1, GL_DIFFUSE, GreenlightColor)
-    glLightfv(GL_LIGHT1, GL_SPECULAR, GreenlightColor)
-    glLightfv(GL_LIGHT1, GL_AMBIENT, ambientLightColor)
-    #BLue light position
-    
-    BluelightPos = (10.,-10.,-10.,1.)    # try to change 4th element to 0. or 1.
-    BluelightColor = (0.2,0.2,1.,1.)
-    glLightfv(GL_LIGHT2, GL_POSITION, BluelightPos)
-   	
-   	# light intensity for each color channel
-    glLightfv(GL_LIGHT2, GL_DIFFUSE, BluelightColor)
-    glLightfv(GL_LIGHT2, GL_SPECULAR, BluelightColor)
-    glLightfv(GL_LIGHT2, GL_AMBIENT, ambientLightColor)
-
-    #White Light position
-    WhitelightPos = (10.,0.,10.,1.)
+    ambientLightColor = (.1,.1,.1,.1,)
+    #White Light position 1
+    WhitelightPos = (1000.,0.,1000.,1.)
     WhitelightColor = (0.75, 0.75, 0.75, 0.1)
-    glLightfv(GL_LIGHT3, GL_POSITION, WhitelightPos)
+    glLightfv(GL_LIGHT0, GL_POSITION, WhitelightPos)
 
 	# light intensity for each color channel
-    glLightfv(GL_LIGHT3, GL_DIFFUSE, WhitelightColor)
-    glLightfv(GL_LIGHT3, GL_SPECULAR, WhitelightColor)
-    glLightfv(GL_LIGHT3, GL_AMBIENT, ambientLightColor)
+    glLightfv(GL_LIGHT0, GL_DIFFUSE, WhitelightColor)
+    glLightfv(GL_LIGHT0, GL_SPECULAR, WhitelightColor)
+    glLightfv(GL_LIGHT0, GL_AMBIENT, ambientLightColor)
+	
+	#White Light position 2
+    WhitelightPos = (-1000.,0.,-1000.,1.)
+    WhitelightColor = (0.75, 0.75, 0.75, 0.1)
+    glLightfv(GL_LIGHT1, GL_POSITION, WhitelightPos)
+
+	# light intensity for each color channel
+    glLightfv(GL_LIGHT1, GL_DIFFUSE, WhitelightColor)
+    glLightfv(GL_LIGHT1, GL_SPECULAR, WhitelightColor)
+    glLightfv(GL_LIGHT1, GL_AMBIENT, ambientLightColor)
 
     glColor3ub(255, 255, 255)
-    glDrawArray()
+    
+    drawbody()
 
     glDisable(GL_LIGHTING)
 
@@ -195,8 +360,21 @@ def cursor_position_callback(window, xoffset, yoffset):
 
 def scroll_callback(window, xoffset, yoffset):
     global gFov
-    gFov -= 3*yoffset;
+    gFov -= yoffset
 
+def key_callback(window, key, scancode, action, mods):
+	global gtoggle, continue_switch, start_switch
+
+	if action==glfw.PRESS or action==glfw.REPEAT:
+		if key == glfw.KEY_Z:
+			#Set toggle switch for glPolygon
+			gtoggle[0] = not gtoggle[0]
+		elif key == glfw.KEY_S:
+			continue_switch = not continue_switch
+		elif key == glfw.KEY_SPACE:
+			start_switch = not start_switch
+			if start_switch == False:
+				continue_switch = True
 def hierarchy(input_list):
 	global XPOSTION, YPOSTION, ZPOSTION, ZROTATION, XROTATION, YROTATION
 
@@ -205,30 +383,60 @@ def hierarchy(input_list):
 	elif input_list[0] == "{" or input_list[0] == "}":
 		body_stack.append(input_list[0])
 	elif input_list[0] == "OFFSET":
-		offset_xyz = [float(input_list[1]), float(input_list[2]), float(input_list[3])]
+		offset_xyz = (float(input_list[1]), float(input_list[2]), float(input_list[3]))
 		body_offset.append(offset_xyz)
-	elif input_list[0] == "CHANNELS"
+	elif input_list[0] == "CHANNELS":
 		#Check Channel count and iterate the joint
 		for i in range(2, int(input_list[1])+2):
-			if input_list[i].upper() == "XPOSTION":
-				joint_type[index].append(XPOSTION)
-			elif input_list[i].upper() == "YPOSTION":
-				joint_type[index].append(YPOSTION)
-			elif input_list[i].upper() == "ZPOSTION":
-				joint_type[index].append(ZPOSTION)
-			elif input_list[i].upper() == "ZPOSTION":
-			elif input_list[i].upper() == "XPOSTION":
-			elif input_list[i].upper() == "YPOSTION":
+			joint_motion.append([])
+			index = len(joint_motion) - 1
+			if input_list[i].upper() == "XPOSITION":
+				joint_motion[index].append(XPOSITION)
+				joint_motion[index].append(0.0)
+			elif input_list[i].upper() == "YPOSITION":
+				joint_motion[index].append(YPOSITION)
+				joint_motion[index].append(0.0)
+			elif input_list[i].upper() == "ZPOSITION":
+				joint_motion[index].append(ZPOSITION)
+				joint_motion[index].append(0.0)
+			elif input_list[i].upper() == "XROTATION":
+				joint_motion[index].append(XROTATION)
+				joint_motion[index].append(0.0)
+			elif input_list[i].upper() == "YROTATION":
+				joint_motion[index].append(YROTATION)
+				joint_motion[index].append(0.0)
+			elif input_list[i].upper() == "ZROTATION":
+				joint_motion[index].append(ZROTATION)
+				joint_motion[index].append(0.0)
 
-
-		body_channels.append()
-
-'''
 def motion(input_list):
-	if input_list
-'''
+	global gfps, gframe_cnt
+
+	if input_list[0] == "Frames:":
+		gframe_cnt = input_list[1]
+	elif input_list[0] == "Frame":
+		gfps = 1.0 / float(input_list[2])
+	else :
+		for i in range(len(joint_motion)):
+			joint_motion[i].append(input_list[i])
+
+
 def drop_callback(window, paths):
-	condtion = "hierarchy"
+	global joint_name, joint_motion, body_stack, body_offset
+	global gfps, gframe_cnt, continue_switch, start_switch, t
+
+	gfps = 0.
+	gframe_cnt = 0
+	continue_switch = True
+	start_switch = False
+	t = 1 		# motion index at t times
+	joint_name = []
+	joint_motion = []
+	body_stack = []
+	body_offset = []
+
+	condtion = "HIERARCHY"
+
 	#Get paths to read Bvh files and fild name
 	paths = str(paths)
 	file_name = list(paths.split('/'))[-1][:-2]
@@ -244,112 +452,38 @@ def drop_callback(window, paths):
 		input_list = list(line.split())
 		
 		#check hierarcy or motion
-		if input_list[0] = "MOTION":
+		if input_list[0] == "MOTION":
 			condtion = "MOTION"
+			continue
 
-		if condtion = "HIERARCHY":
+		if condtion == "HIERARCHY":
 			hierarchy(input_list)
-		#elif condtion = "MOTION"
-			#motion(input_list)
+		elif condtion == "MOTION":
+			motion(input_list)
 	
 
 	#Print out the information to stdout(console)
 	print(" ")
-	print("======================================")
-	print(file_name)
-	print("======================================")
-
-	'''
-	global varr, narr, tarr, qarr, marr
-
-	varr = np.array([[0., 0., 0.]], 'float32')
-	narr = np.array([[0., 0., 0.]], 'float32')
-	tarr = np.array([[0., 0., 0.]], 'float32')
-	qarr = np.array([[0., 0., 0.]], 'float32')
-	marr = np.array([[0., 0., 0.]], 'float32')
-	
-	#Get paths to read obj files and  file name
-	paths = str(paths)
-	file_name = list(paths.split('/'))[-1][:-2]
-	
-	#Open obj file
-	f = open(paths[2:-2], 'r')
-	count3F, count4F, countMF = 0, 0, 0
-
-	while True:
-		line = f.readline()
-		if not line:
-			break
-
-		input_list = list(line.split())
-		if len(input_list) < 2:
-			continue
-
-		if input_list[0] == "v":
-			varr = np.append(varr, np.array([[float(input_list[1]), float(input_list[2]), float(input_list[3])]], 'float32'), axis=0)
-		elif input_list[0] == "vn":
-			narr = np.append(narr, np.array([[float(input_list[1]), float(input_list[2]), float(input_list[3])]], 'float32'), axis=0)
-		elif input_list[0] == "f":
-			if input_list[len(input_list)-1] == '\n':
-				input_list = np.delete(input_list, len(input_list)-1,0)
-
-			#Count number of faces to print 
-			if len(input_list) == 4:
-				count3F += 1
-				for i in range(1,4):
-					sli = input_list[i].split('/')
-					if len(sli) < 3:
-						tarr = np.append(tarr, np.array([varr[int(sli[0])]], 'float32'), axis=0)
-					else :
-						tarr = np.append(tarr, np.array([narr[int(sli[2])]], 'float32'), axis=0)
-					tarr = np.append(tarr, np.array([varr[int(sli[0])]], 'float32'), axis=0)
-
-			elif len(input_list) == 5:
-				count4F += 1
-				for i in range(1,5):
-					sli = input_list[i].split('/')
-					if len(sli) < 3:
-						qarr = np.append(qarr, np.array([varr[int(sli[0])]], 'float32'), axis=0)
-					else :
-						qarr = np.append(qarr, np.array([narr[int(sli[2])]], 'float32'), axis=0)
-					qarr = np.append(qarr, np.array([varr[int(sli[0])]], 'float32'), axis=0)
-
-			if len(input_list) > 5:
-				countMF += 1
-				for i in range(32):
-					marr = np.append(marr, np.array([narr[sli[i][1]]], 'float32'), axis=0)
-					marr = np.append(marr, np.array([varr[sli[i][0]]], 'float32'), axis=0)
-				
-	f.close()
-	tarr = np.delete(tarr, [0], axis=0)
-	qarr = np.delete(qarr, [0], axis=0)
-	marr = np.delete(marr, [0], axis=0)
-				
-	#Print out the information of the obj file to console
-	print()
-	print("=================================================================")
+	print("==============================================")
 	print("File name : " + file_name)
-	print("Total number of faces : ", (count3F+count4F+countMF))
-	print("Number of faces with 3 vertics : ", (count3F))
-	print("Number of faces with 4 vertics : ", (count4F))
-	print("Number of faces with more than 4 vertics : ", (countMF))
-	print("=================================================================")
-'''
-
+	print("Number of frames : " + str(gframe_cnt))
+	print("FPS (which is 1/FrameTime : " + str(round(gfps, 3)))
+	print("Number of joints (including root) : " + str(len(joint_name)))
+	print("List of all joint names : " + joint_name[0])
+	for i in range(1, len(joint_name)):
+		print("                          " + joint_name[i])
+	print("==============================================")
 
 def size_callback(window, width, height):
-	global gWidth, gHeight
-	gWidth = width
-	gHeight = height
-	glViewport(0, 0, gWidth, gHeight)
-
+    global gWidth, gHeight
+    gWidth = width
+    gHeight = height
+    glViewport(0, 0, gWidth, gHeight)
 
 def main():
-    global gVertexArrayIndexed, gIndexArray
-
     if not glfw.init():
         return
-    window = glfw.create_window(480,480,'2016025969', None,None)
+    window = glfw.create_window(640,640,'2016025969', None,None)
     if not window:
         glfw.terminate()
         return
@@ -363,7 +497,6 @@ def main():
     glfw.set_drop_callback(window, drop_callback)
 
     glfw.swap_interval(1)
-    tarr = createVertexArraySeparate()
 
     while not glfw.window_should_close(window):
         glfw.poll_events()
