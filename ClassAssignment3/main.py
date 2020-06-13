@@ -41,6 +41,7 @@ joint_motion = []
 body_stack = []
 body_offset = []
 start_switch = False
+channel = []
 t = 1 		# motion index at t times
 
 def drawFrame():
@@ -76,19 +77,21 @@ def drawbody():
 
 	oix = 0		# offset index
 	ix = 0		# motion type index
+	c = 0		# channel index
 
 	for i in range(len(body_stack)):
 		if body_stack[i] == "{":
 			glPushMatrix()
-			o1 = np.array(body_offset[0])
-			o2 = o1 + np.array(body_offset[oix])
+			if i != 0:
+				o1 = np.array((0, 0, 0))
+				o2 = o1 + np.array(body_offset[oix])
 
-			#Draw the skeleton by line segments
-			glBegin(GL_LINES)
-			glColor3ub(0,255,255)
-			glVertex3fv(o1)
-			glVertex3fv(o2)
-			glEnd()
+				#Draw the skeleton by line segments
+				glBegin(GL_LINES)
+				glColor3ub(0,255,255)
+				glVertex3fv(o1)
+				glVertex3fv(o2)
+				glEnd()
 
 			oarr = np.array(body_offset[oix])
 			glTranslatef(oarr[0], oarr[1], oarr[2])
@@ -97,7 +100,7 @@ def drawbody():
 
 			if body_stack[i+1] == "}":
 				continue
-			elif i == 0:
+			elif channel[c] == 6:
 				# Root Joint
 				#Transition joint
 				if int(joint_motion[ix][0]) == 4:
@@ -191,7 +194,7 @@ def drawbody():
 						glRotatef(float(joint_motion[ix+4][t]), 0,1,0)
 						glRotatef(float(joint_motion[ix+5][t]), 0,0,1)
 				ix += 6	
-			else :
+			elif channel[c] == 3:
 				#Rotate joint except Root
 				if int(joint_motion[ix][0]) == 1:
 					if int(joint_motion[ix+1][0]) == 2 and int(joint_motion[ix+2][0]) == 3:
@@ -257,6 +260,7 @@ def drawbody():
 						glRotatef(float(joint_motion[ix+1][t]), 0,1,0)
 						glRotatef(float(joint_motion[ix+2][t]), 0,0,1)
 				ix += 3
+			c += 1
 		elif body_stack[i] == "}":
 			glPopMatrix()
 	if start_switch == False:
@@ -354,6 +358,7 @@ def hierarchy(input_list):
 		body_offset.append(offset_xyz)
 	elif input_list[0] == "CHANNELS":
 		#Check Channel count and iterate the joint
+		channel.append(int(input_list[1]))
 		for i in range(2, int(input_list[1])+2):
 			joint_motion.append([])
 			index = len(joint_motion) - 1
@@ -389,7 +394,7 @@ def motion(input_list):
 
 
 def drop_callback(window, paths):
-	global joint_name, joint_motion, body_stack, body_offset
+	global joint_name, joint_motion, body_stack, body_offset, channel
 	global gfps, gframe_cnt, continue_switch, start_switch, t
 
 	gfps = 0.
@@ -401,6 +406,7 @@ def drop_callback(window, paths):
 	joint_motion = []
 	body_stack = []
 	body_offset = []
+	channel = []
 
 	condtion = "HIERARCHY"
 
