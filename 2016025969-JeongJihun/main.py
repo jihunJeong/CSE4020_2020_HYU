@@ -6,7 +6,7 @@ import numpy as np
 gLeftButton = False
 gRightButton = False
 
-gFov = 150.
+gFov = 100.
 gWidth = 800
 gHeight = 800
 
@@ -17,6 +17,11 @@ gPointY = 0.
 
 gXpos = 0
 gYpos = 0
+
+cx = 0
+cy = 0
+cz = 0
+time = 0
 
 varr = np.array([[0., 0., 0.]], 'float32')
 narr = np.array([[0., 0., 0.]], 'float32')
@@ -38,6 +43,20 @@ jarr = np.array([[0., 0., 0.]], 'float32')
 
 gComposedM = np.identity(4)
 
+gtoggle = [True]
+
+def getcenter():
+    global cx, cy, cz
+    cx, cy, cz = 0, 0, 0
+
+    for i in range(len(varr)):
+        cx += int(varr[i][0])
+        cy += varr[i][1]
+        cz += varr[i][2]
+    cx = cx / len(varr)
+    cy = cy / len(varr)
+    cz = cz / len(varr)
+    
 def drawFrame():
     glBegin(GL_LINES)
     glColor3ub(255, 0, 0)
@@ -134,27 +153,26 @@ def glDrawArrayC():
     glDrawArrays(GL_POLYGON, 0, int(jarr.size/6))
 
 def render():
-    global gComposedM 
-
+    global gComposedM, cx, cy, cz 
+    cx = gComposedM[0][3]
+    cy = gComposedM[1][3]
+    cz = gComposedM[2][3]
     glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT)
     glEnable(GL_DEPTH_TEST)
-    '''
-    #set Toggle wireframe / solid by pressing Z key
+
     if gtoggle[0]:
-        glPolygonMode( GL_FRONT_AND_BACK, GL_LINE)
+        glMatrixMode(GL_PROJECTION)
+        glLoadIdentity()
+
+        gluPerspective(gFov, gWidth/gHeight, 5, 1000)
+        gluLookAt(cx, cy+8, cz+8, cx, cy, cz, 0,.1,0)
     else :
-        glPolygonMode( GL_FRONT_AND_BACK, GL_FILL)
-    '''
+        glMatrixMode(GL_PROJECTION)
+        glLoadIdentity()
 
-    glLoadIdentity()
-    gluLookAt(0, 0, 8, 0,0,0, 0,.1,0)
-   
-    glMatrixMode(GL_PROJECTION)
-    glLoadIdentity()
-
-    gluPerspective(gFov, gWidth/gHeight, 5, 1000)
-    glTranslatef(0., 0., -10)
-
+        gluPerspective(100, gWidth/gHeight, 5, 1000)
+        gluLookAt(cx, cy, cz, cx+4,cy,cz, 0,.1,0)
+        
     glMatrixMode(GL_MODELVIEW)
     glLoadIdentity()
 
@@ -169,74 +187,63 @@ def render():
     glEnable(GL_LIGHTING)   # try to uncomment: no lighting
     glEnable(GL_LIGHT0)
     glEnable(GL_LIGHT1)
-    glEnable(GL_LIGHT2)
-    glEnable(GL_LIGHT3)
-    glEnable(GL_LIGHT4)
 
     glEnable(GL_NORMALIZE)  # try to uncomment: lighting will be incorrect if you scale the object
+    
     # glEnable(GL_RESCALE_NORMAL)
-
-    # Red light position
     ambientLightColor = (.1,.1,.1,1.)
-
-    RedlightPos = (0.,np.sqrt(10**3),0.,1.)    # try to change 4th element to 0. or 1.
-    RedColor = (1.,0.2,0.2,1.)
-    glLightfv(GL_LIGHT0, GL_POSITION, RedlightPos)
-    # light intensity for each color channel
-    glLightfv(GL_LIGHT0, GL_DIFFUSE, RedColor)
-    glLightfv(GL_LIGHT0, GL_SPECULAR, RedColor)
-    glLightfv(GL_LIGHT0, GL_AMBIENT, ambientLightColor)
-    #Green light position
     
-    GreenlightPos = (-10.,-10.,10.,1.)    # try to change 4th element to 0. or 1.
-    GreenlightColor = (0.2,1.,0.2,1.)
-    glLightfv(GL_LIGHT1, GL_POSITION, GreenlightPos)
-    
-    # light intensity for each color channel
-    glLightfv(GL_LIGHT1, GL_DIFFUSE, GreenlightColor)
-    glLightfv(GL_LIGHT1, GL_SPECULAR, GreenlightColor)
-    glLightfv(GL_LIGHT1, GL_AMBIENT, ambientLightColor)
-    #BLue light position
-    
-    BluelightPos = (10.,-10.,-10.,1.)    # try to change 4th element to 0. or 1.
-    BluelightColor = (0.2,0.2,1.,1.)
-    glLightfv(GL_LIGHT2, GL_POSITION, BluelightPos)
-    
-    # light intensity for each color channel
-    glLightfv(GL_LIGHT2, GL_DIFFUSE, BluelightColor)
-    glLightfv(GL_LIGHT2, GL_SPECULAR, BluelightColor)
-    glLightfv(GL_LIGHT2, GL_AMBIENT, ambientLightColor)
-
+    glPushMatrix()
+    S = np.identity(4)
+    S[:3, :3] = np.array([[np.cos(time), -np.sin(time), 0],
+                      [np.sin(time), np.cos(time), 0],
+                      [0.,0.,1.]])
+    glMultMatrixf(S.T)
     #White Light position 1
-    WhitelightPos = (1000.,0.,1000.,1.)
-    WhitelightColor = (0.75, 0.75, 0.75, 0.1)
-    glLightfv(GL_LIGHT3, GL_POSITION, WhitelightPos)
+    WhitelightPos = (1000, 0., 1000, 1.)
+    WhitelightColor = (0.75, 0, 0.75, 1.)
+    glLightfv(GL_LIGHT0, GL_POSITION, WhitelightPos)
+    glPopMatrix()
 
-    # light intensity for each color channel
-    glLightfv(GL_LIGHT3, GL_DIFFUSE, WhitelightColor)
-    glLightfv(GL_LIGHT3, GL_SPECULAR, WhitelightColor)
-    glLightfv(GL_LIGHT3, GL_AMBIENT, ambientLightColor)
-    
+    # light intensity for each color channels
+    glLightfv(GL_LIGHT0, GL_DIFFUSE, WhitelightColor)
+    glLightfv(GL_LIGHT0, GL_SPECULAR, WhitelightColor)
+    glLightfv(GL_LIGHT0, GL_AMBIENT, ambientLightColor)
+  
     #White Light position 2
-    WhitelightPos = (-1000.,0.,-1000.,1.)
-    WhitelightColor = (0.75, 0.75, 0.75, 0.1)
-    glLightfv(GL_LIGHT4, GL_POSITION, WhitelightPos)
+    WhitelightPos = (1000.,0.,1000.,1.)
+    WhitelightColor = (0.75, 0.75, 0.75, 0.1)v
+    glLightfv(GL_LIGHT1, GL_POSITION, WhitelightPos)
 
-    # light intensity for each color channel
-    glLightfv(GL_LIGHT4, GL_DIFFUSE, WhitelightColor)
-    glLightfv(GL_LIGHT4, GL_SPECULAR, WhitelightColor)
-    glLightfv(GL_LIGHT4, GL_AMBIENT, ambientLightColor)
+    # light intensity for each color channels
+    glLightfv(GL_LIGHT1, GL_DIFFUSE, WhitelightColor)
+    glLightfv(GL_LIGHT1, GL_SPECULAR, WhitelightColor)
+    glLightfv(GL_LIGHT1, GL_AMBIENT, ambientLightColor)
 
     glColor3ub(255, 255, 255)
 
     glMultMatrixf(gComposedM.T)
+    specularObjectColor = (1.,1.,1.,1.)
+    # material reflectance for each color channel
+    objectColor = (1.,1.,0.,1.)
+    glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, objectColor)
     glDrawArrayA()
 
-    #glTranslatef(5, 0, 0)
+    glTranslatef(5, 0, 0)
+    # material reflectance for each color channel
+    objectColor = (0.,1.,1.,1.)
+    glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, objectColor)
     glDrawArrayB()
 
-    #glTranslatef(5, 0, 0)
+    glTranslatef(5, 0, 0)
+    # material reflectance for each color channel
+    objectColor = (1.,0.,1.,1.)
+    glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, objectColor)
     glDrawArrayC()
+
+    glMaterialfv(GL_FRONT, GL_SHININESS, 10)
+    glMaterialfv(GL_FRONT, GL_SPECULAR, specularObjectColor)
+
     glDisable(GL_LIGHTING)
 
 def mouse_button_callback(window, button, action, mods):
@@ -289,6 +296,8 @@ def scroll_callback(window, xoffset, yoffset):
 
 def key_callback(window, key, scancode, action, mods):
     global gComposedM, gLeftButton, gRightButton 
+    global cx, cy, cz
+
     nM = np.identity(4)
 
     if action==glfw.PRESS or action==glfw.REPEAT:
@@ -375,6 +384,8 @@ def key_callback(window, key, scancode, action, mods):
         elif key == glfw.KEY_C :
             #Z Reflection
             gComposedM[2][3] = gComposedM[2][3] * -1
+        elif key == glfw.KEY_V :
+            gtoggle[0] = not gtoggle[0]
         gComposedM = gComposedM @ nM
 
         
@@ -430,6 +441,7 @@ def draw_imageA():
                     marr = np.append(marr, np.array([varr[int(sli[0])]], 'float32'), axis=0)
 
     f.close()
+    varr = np.delete(varr, [0], axis=0)
     tarr = np.delete(tarr, [0], axis=0)
     qarr = np.delete(qarr, [0], axis=0)
     marr = np.delete(marr, [0], axis=0)
@@ -552,7 +564,7 @@ def size_callback(window, width, height):
     glViewport(0, 0, gWidth, gHeight)
 
 def main():
-    global gVertexArrayIndexed, gIndexArray
+    global gVertexArrayIndexed, gIndexArray, time
 
     if not glfw.init():
         return
@@ -576,6 +588,7 @@ def main():
 
     while not glfw.window_should_close(window):
         glfw.poll_events()
+        time = glfw.get_time()
         render()
         glfw.swap_buffers(window)
 
