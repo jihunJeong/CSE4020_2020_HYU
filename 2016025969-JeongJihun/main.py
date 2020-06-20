@@ -36,7 +36,7 @@ harr = np.array([[0., 0., 0.]], 'float32')
 iarr = np.array([[0., 0., 0.]], 'float32')
 jarr = np.array([[0., 0., 0.]], 'float32')
 
-gtoggle = [True, False]
+gComposedM = np.identity(4)
 
 def drawFrame():
     glBegin(GL_LINES)
@@ -134,14 +134,18 @@ def glDrawArrayC():
     glDrawArrays(GL_POLYGON, 0, int(jarr.size/6))
 
 def render():
+    global gComposedM 
+
     glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT)
     glEnable(GL_DEPTH_TEST)
-
+    '''
     #set Toggle wireframe / solid by pressing Z key
     if gtoggle[0]:
         glPolygonMode( GL_FRONT_AND_BACK, GL_LINE)
     else :
         glPolygonMode( GL_FRONT_AND_BACK, GL_FILL)
+    '''
+
     glLoadIdentity()
     gluLookAt(0, 0, 8, 0,0,0, 0,.1,0)
    
@@ -224,10 +228,14 @@ def render():
     glLightfv(GL_LIGHT4, GL_AMBIENT, ambientLightColor)
 
     glColor3ub(255, 255, 255)
+
+    glMultMatrixf(gComposedM.T)
     glDrawArrayA()
 
+    #glTranslatef(5, 0, 0)
     glDrawArrayB()
 
+    #glTranslatef(5, 0, 0)
     glDrawArrayC()
     glDisable(GL_LIGHTING)
 
@@ -262,19 +270,114 @@ def cursor_position_callback(window, xoffset, yoffset):
 
 
 def scroll_callback(window, xoffset, yoffset):
-    global gFov
-    gFov -= yoffset
+    global gFov, gLeftButton, gComposedM
+    
+    scalar = 1
+    if yoffset < 0:
+        scalar = scalar / (-1 * yoffset * 1.2)
+    else :
+        scalar = (yoffset * 1.2)
+
+    nM = np.identity(4)
+    if gLeftButton and not gRightButton:
+        nM[:3, :3] = [[scalar, 0, 0],
+                     [0, scalar, 0],
+                     [0, 0, scalar]]
+        gComposedM = gComposedM @ nM
+    else :
+        gFov -= yoffset
 
 def key_callback(window, key, scancode, action, mods):
-    global gtoggle
+    global gComposedM, gLeftButton, gRightButton 
+    nM = np.identity(4)
 
     if action==glfw.PRESS or action==glfw.REPEAT:
-        if key == glfw.KEY_Z:
-            #Set toggle switch for glPolygon
-            gtoggle[0] = not gtoggle[0]
-        elif key == glfw.KEY_S:
-            gtoggle[1] = not gtoggle[1]
+        if key == glfw.KEY_A and not gLeftButton and not gRightButton:
+            #X minus Transition
+            nM[0][3] = -0.1
+        elif key == glfw.KEY_D and not gLeftButton and not gRightButton:
+            #X plus transition
+            nM[0][3] = 0.1
+        elif key == glfw.KEY_S and not gLeftButton and not gRightButton:
+            #Y minus Transition
+            nM[1][3] = -0.1
+        elif key == glfw.KEY_W and not gLeftButton and not gRightButton:
+            #Y plus transition
+            nM[1][3] = 0.1
+        elif key == glfw.KEY_Q and not gLeftButton and not gRightButton:
+            #Z minus Transition
+            nM[2][3] = -0.1
+        elif key == glfw.KEY_E and not gLeftButton and not gRightButton:
+            #Z plus transition
+            nM[2][3] = 0.1
+        elif key == glfw.KEY_A and gLeftButton and not gRightButton:
+            #Y axis minus Rotation
+            th = np.radians(-10)
+            nM[:3, :3] = [[np.cos(th), 0, np.sin(th)],
+                          [0, 1, 0],
+                          [-np.sin(th), 0, np.cos(th)]]
+        elif key == glfw.KEY_D and gLeftButton and not gRightButton:
+            #Y axis plus Rotation
+            th = np.radians(10)
+            nM[:3, :3] = [[np.cos(th), 0, np.sin(th)],
+                         [0, 1, 0],
+                         [-np.sin(th), 0, np.cos(th)]]
+        elif key == glfw.KEY_S and gLeftButton and not gRightButton:
+            #X axis minus Rotation
+            th = np.radians(-10)
+            nM[:3, :3] = [[1, 0, 0],
+                         [0, np.cos(th), -np.sin(th)],
+                         [0, np.sin(th), np.cos(th)]]
+        elif key == glfw.KEY_W and gLeftButton and not gRightButton:
+            #X axis plus Rotation
+            th = np.radians(10)
+            nM[:3, :3] = [[1, 0, 0],
+                         [0, np.cos(th), -np.sin(th)],
+                         [0, np.sin(th), np.cos(th)]]
+        elif key == glfw.KEY_Q and gLeftButton and not gRightButton:
+            #Z axis minus Rotation
+            th = np.radians(-10)
+            nM[:3, :3] = [[np.cos(th), -np.sin(th), 0],
+                         [np.sin(th), np.cos(th), 0],
+                         [0, 0, 1]]
+        elif key == glfw.KEY_E and gLeftButton and not gRightButton:
+            #Z axis plus Rotation
+            th = np.radians(10)
+            nM[:3, :3] = [[np.cos(th), -np.sin(th), 0],
+                         [np.sin(th), np.cos(th), 0],
+                         [0, 0, 1]]
+        elif key == glfw.KEY_A and not gLeftButton and gRightButton:
+            #X minus Shere
+            nM[:3, :3] = [[1, -0.1, 0],
+                         [0, 1, 0],
+                         [0.,0.,1.]]
+        elif key == glfw.KEY_D and not gLeftButton and gRightButton:
+            #X plus Shere
+            nM[:3, :3] = [[1, 0.1, 0],
+                         [0, 1, 0],
+                         [0.,0.,1.]]
+        elif key == glfw.KEY_Q and not gLeftButton and gRightButton:
+            #Z minus Shere
+            nM[:3, :3] = [[1., 0., 0.],
+                         [0., 1., 0.],
+                         [0,-0.1,1.]]
+        elif key == glfw.KEY_E and not gLeftButton and gRightButton:
+            #Z plus Shere
+            nM[:3, :3] = [[1, 0, 0],
+                         [0, 1, 0],
+                         [0,0.1,1.]]
+        elif key == glfw.KEY_Z :
+            #X Reflection
+            gComposedM[0][3] = gComposedM[0][3] * -1
+        elif key == glfw.KEY_X :
+            #Y Reflection
+            gComposedM[1][3] = gComposedM[1][3] * -1
+        elif key == glfw.KEY_C :
+            #Z Reflection
+            gComposedM[2][3] = gComposedM[2][3] * -1
+        gComposedM = gComposedM @ nM
 
+        
 def draw_imageA():
     global varr, narr, tarr, qarr, marr 
     
