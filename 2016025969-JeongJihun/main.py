@@ -54,17 +54,15 @@ cameraM = np.identity(4)
 
 gtoggle = [True]
 
-def getcenter():
-    global cx, cy, cz
-    cx, cy, cz = 0, 0, 0
-
+def getCheckSize(v):
+    vn = [0, 0, 0]
     for i in range(len(varr)):
-        cx += int(varr[i][0])
-        cy += varr[i][1]
-        cz += varr[i][2]
-    cx = cx / len(varr)
-    cy = cy / len(varr)
-    cz = cz / len(varr)
+        vn[0] = varr[i][0] - v[0]
+        vn[1] = varr[i][1] - v[1]
+        vn[2] = varr[i][2] - v[2]
+        if np.sqrt(np.dot(vn, vn)) <= 1:
+            return True
+    return False
     
 def drawFrame():
     glBegin(GL_LINES)
@@ -245,7 +243,7 @@ def render():
     v2 = [cbx - ccx, cby - ccy, cbz - ccz]
     v3 = [ccx - cx, ccy - cy, ccz - cz]
 
-    if np.sqrt(np.dot(v1, v1)) <= 5:
+    if getCheckSize([cbx, cby, cbz]):
         cbx = 8 * np.cos(time)
         cby = 4 * np.sin(time) + 4 * np.cos(time)
         cbz = 8 * np.sin(time)
@@ -259,7 +257,7 @@ def render():
     glPopMatrix()
 
     glPushMatrix()
-    if np.sqrt(np.dot(v3, v3)) <= 5:
+    if getCheckSize([ccx, ccy, ccz]):
         ccx = 8 * np.cos(4 * time)
         ccy = 4 * np.sin(2 * time) + 4 * np.cos(2 * time)
         ccz = 8 * np.sin(3 * time)
@@ -410,12 +408,12 @@ def key_callback(window, key, scancode, action, mods):
             cM[:3, :3] = [[np.cos(th), -np.sin(th), 0],
                          [np.sin(th), np.cos(th), 0],
                          [0, 0, 1]]
-        elif key == glfw.KEY_A and not gLeftButton and gRightButton:
+        elif key == glfw.KEY_D and not gLeftButton and gRightButton:
             #X minus Shere
             nM[:3, :3] = [[1, -0.1, 0],
                          [0, 1, 0],
                          [0.,0.,1.]]
-        elif key == glfw.KEY_D and not gLeftButton and gRightButton:
+        elif key == glfw.KEY_A and not gLeftButton and gRightButton:
             #X plus Shere
             nM[:3, :3] = [[1, 0.1, 0],
                          [0, 1, 0],
