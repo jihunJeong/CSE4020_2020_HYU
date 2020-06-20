@@ -31,6 +31,8 @@ ccx = -10
 ccy = 0
 ccz = 0
 
+size = 0
+
 varr = np.array([[0., 0., 0.]], 'float32')
 narr = np.array([[0., 0., 0.]], 'float32')
 tarr = np.array([[0., 0., 0.]], 'float32')
@@ -53,16 +55,6 @@ gComposedM = np.identity(4)
 cameraM = np.identity(4)
 
 gtoggle = [True]
-
-def getCheckSize(v):
-    vn = [0, 0, 0]
-    for i in range(len(varr)):
-        vn[0] = varr[i][0] - v[0]
-        vn[1] = varr[i][1] - v[1]
-        vn[2] = varr[i][2] - v[2]
-        if np.sqrt(np.dot(vn, vn)) <= 1:
-            return True
-    return False
     
 def drawFrame():
     glBegin(GL_LINES)
@@ -161,7 +153,7 @@ def glDrawArrayC():
 
 def render():
     global gComposedM, cameraM, cx, cy, cz 
-    global cbx, cby, cbz, ccx, ccy, ccz
+    global cbx, cby, cbz, ccx, ccy, ccz, size
     cx = gComposedM[0][3]
     cy = gComposedM[1][3]
     cz = gComposedM[2][3]
@@ -243,7 +235,7 @@ def render():
     v2 = [cbx - ccx, cby - ccy, cbz - ccz]
     v3 = [ccx - cx, ccy - cy, ccz - cz]
 
-    if getCheckSize([cbx, cby, cbz]):
+    if np.sqrt(np.dot(v1, v1)) - size <= 2:
         cbx = 8 * np.cos(time)
         cby = 4 * np.sin(time) + 4 * np.cos(time)
         cbz = 8 * np.sin(time)
@@ -257,7 +249,7 @@ def render():
     glPopMatrix()
 
     glPushMatrix()
-    if getCheckSize([ccx, ccy, ccz]):
+    if np.sqrt(np.dot(v3, v3)) - size <= 2:
         ccx = 8 * np.cos(4 * time)
         ccy = 4 * np.sin(2 * time) + 4 * np.cos(2 * time)
         ccz = 8 * np.sin(3 * time)
@@ -306,7 +298,7 @@ def cursor_position_callback(window, xoffset, yoffset):
 
 
 def scroll_callback(window, xoffset, yoffset):
-    global gFov, gLeftButton, gComposedM
+    global gFov, gLeftButton, gComposedM, size
     
     scalar = 1
     if yoffset < 0:
@@ -319,13 +311,15 @@ def scroll_callback(window, xoffset, yoffset):
         nM[:3, :3] = [[scalar, 0, 0],
                      [0, scalar, 0],
                      [0, 0, scalar]]
+        size += scalar
+
         gComposedM = gComposedM @ nM
     else :
         gFov -= yoffset
 
 def key_callback(window, key, scancode, action, mods):
     global gComposedM, cameraM, gLeftButton, gRightButton
-    global cx, cy, cz
+    global cx, cy, cz, size
 
     nM = np.identity(4)
     cM = np.identity(4)
@@ -445,7 +439,7 @@ def key_callback(window, key, scancode, action, mods):
 
         
 def draw_imageA():
-    global varr, narr, tarr, qarr, marr 
+    global varr, narr, tarr, qarr, marr, size
     
     #Open obj file
     f = open('./obj/LowPolyFiatUNO.obj', 'r')
@@ -461,6 +455,7 @@ def draw_imageA():
 
         if input_list[0] == "v":
             varr = np.append(varr, np.array([[float(input_list[1]), float(input_list[2]), float(input_list[3])]], 'float32'), axis=0)
+            size = np.sqrt(np.dot(varr[len(varr)-1], varr[len(varr)-1]))
         elif input_list[0] == "vn":
             narr = np.append(narr, np.array([[float(input_list[1]), float(input_list[2]), float(input_list[3])]], 'float32'), axis=0)
         elif input_list[0] == "f":
