@@ -6,7 +6,7 @@ import numpy as np
 gLeftButton = False
 gRightButton = False
 
-gFov = 100.
+gFov = 70.
 gWidth = 800
 gHeight = 800
 
@@ -22,6 +22,14 @@ cx = 0
 cy = 0
 cz = 0
 time = 0
+
+cbx = 10
+cby = 0
+cbz = 0
+
+ccx = -10
+ccy = 0
+ccz = 0
 
 varr = np.array([[0., 0., 0.]], 'float32')
 narr = np.array([[0., 0., 0.]], 'float32')
@@ -42,6 +50,7 @@ iarr = np.array([[0., 0., 0.]], 'float32')
 jarr = np.array([[0., 0., 0.]], 'float32')
 
 gComposedM = np.identity(4)
+cameraM = np.identity(4)
 
 gtoggle = [True]
 
@@ -153,34 +162,35 @@ def glDrawArrayC():
     glDrawArrays(GL_POLYGON, 0, int(jarr.size/6))
 
 def render():
-    global gComposedM, cx, cy, cz 
+    global gComposedM, cameraM, cx, cy, cz 
+    global cbx, cby, cbz, ccx, ccy, ccz
     cx = gComposedM[0][3]
     cy = gComposedM[1][3]
     cz = gComposedM[2][3]
+    
     glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT)
     glEnable(GL_DEPTH_TEST)
 
+    glMatrixMode(GL_PROJECTION)
+    glLoadIdentity()
     if gtoggle[0]:
-        glMatrixMode(GL_PROJECTION)
-        glLoadIdentity()
-
         gluPerspective(gFov, gWidth/gHeight, 5, 1000)
-        gluLookAt(cx, cy+8, cz+8, cx, cy, cz, 0,.1,0)
+        gluLookAt(cx+20, cy+20, cz+20, cx, cy, cz, 0,.1,0)
     else :
-        glMatrixMode(GL_PROJECTION)
-        glLoadIdentity()
-
         gluPerspective(100, gWidth/gHeight, 5, 1000)
-        gluLookAt(cx, cy, cz, cx+4,cy,cz, 0,.1,0)
+        glMultMatrixf(cameraM)
+        gluLookAt(cx, cy, cz+1, cx, cy, cz+2, 0,.1,0)
         
     glMatrixMode(GL_MODELVIEW)
     glLoadIdentity()
 
+    
     glTranslatef(gPointX, 0, 0)
     glTranslatef(0, gPointY, 0)
     glRotatef(gCamHeight, 1, 0, 0)
     glRotatef(gCamwith, 0, 1, 0)
- 
+    
+
     drawFrame()
     drawGrid()
 
@@ -212,7 +222,7 @@ def render():
   
     #White Light position 2
     WhitelightPos = (1000.,0.,1000.,1.)
-    WhitelightColor = (0.75, 0.75, 0.75, 0.1)v
+    WhitelightColor = (0.75, 0.75, 0.75, 0.1)
     glLightfv(GL_LIGHT1, GL_POSITION, WhitelightPos)
 
     # light intensity for each color channels
@@ -220,26 +230,47 @@ def render():
     glLightfv(GL_LIGHT1, GL_SPECULAR, WhitelightColor)
     glLightfv(GL_LIGHT1, GL_AMBIENT, ambientLightColor)
 
-    glColor3ub(255, 255, 255)
-
-    glMultMatrixf(gComposedM.T)
     specularObjectColor = (1.,1.,1.,1.)
     # material reflectance for each color channel
     objectColor = (1.,1.,0.,1.)
     glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, objectColor)
-    glDrawArrayA()
 
-    glTranslatef(5, 0, 0)
+    glPushMatrix()
+    glMultMatrixf(gComposedM.T)
+    glDrawArrayA()
+    glPopMatrix()
+
+    glPushMatrix()
+    v1 = [cx - cbx, cy - cby, cz - cbz]
+    v2 = [cbx - ccx, cby - ccy, cbz - ccz]
+    v3 = [ccx - cx, ccy - cy, ccz - cz]
+
+    if np.sqrt(np.dot(v1, v1)) <= 5:
+        cbx = 8 * np.cos(time)
+        cby = 4 * np.sin(time) + 4 * np.cos(time)
+        cbz = 8 * np.sin(time)
+        if np.sqrt(np.dot(v2, v2)) <= 5:
+            cbx = -2 * ccx - 2
+    glTranslatef(cbx, cby, cbz)
     # material reflectance for each color channel
     objectColor = (0.,1.,1.,1.)
     glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, objectColor)
     glDrawArrayB()
+    glPopMatrix()
 
-    glTranslatef(5, 0, 0)
+    glPushMatrix()
+    if np.sqrt(np.dot(v3, v3)) <= 5:
+        ccx = 8 * np.cos(4 * time)
+        ccy = 4 * np.sin(2 * time) + 4 * np.cos(2 * time)
+        ccz = 8 * np.sin(3 * time)
+        if np.sqrt(np.dot(v2, v2)) <= 5:
+            ccx = -1 * ccx -2
+    glTranslatef(ccx, ccy, ccz)
     # material reflectance for each color channel
     objectColor = (1.,0.,1.,1.)
     glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, objectColor)
     glDrawArrayC()
+    glPopMatrix()
 
     glMaterialfv(GL_FRONT, GL_SHININESS, 10)
     glMaterialfv(GL_FRONT, GL_SPECULAR, specularObjectColor)
@@ -295,40 +326,48 @@ def scroll_callback(window, xoffset, yoffset):
         gFov -= yoffset
 
 def key_callback(window, key, scancode, action, mods):
-    global gComposedM, gLeftButton, gRightButton 
+    global gComposedM, cameraM, gLeftButton, gRightButton
     global cx, cy, cz
 
     nM = np.identity(4)
-
+    cM = np.identity(4)
     if action==glfw.PRESS or action==glfw.REPEAT:
-        if key == glfw.KEY_A and not gLeftButton and not gRightButton:
+        if key == glfw.KEY_D and not gLeftButton and not gRightButton:
             #X minus Transition
-            nM[0][3] = -0.1
-        elif key == glfw.KEY_D and not gLeftButton and not gRightButton:
+            nM[0][3] = -0.3
+        elif key == glfw.KEY_A and not gLeftButton and not gRightButton:
             #X plus transition
-            nM[0][3] = 0.1
-        elif key == glfw.KEY_S and not gLeftButton and not gRightButton:
-            #Y minus Transition
-            nM[1][3] = -0.1
-        elif key == glfw.KEY_W and not gLeftButton and not gRightButton:
-            #Y plus transition
-            nM[1][3] = 0.1
+            nM[0][3] = 0.3
         elif key == glfw.KEY_Q and not gLeftButton and not gRightButton:
-            #Z minus Transition
-            nM[2][3] = -0.1
+            #Y minus Transition
+            nM[1][3] = -0.3
         elif key == glfw.KEY_E and not gLeftButton and not gRightButton:
+            #Y plus transition
+            nM[1][3] = 0.3
+        elif key == glfw.KEY_S and not gLeftButton and not gRightButton:
+            #Z minus Transition
+            nM[2][3] = -0.3
+        elif key == glfw.KEY_W and not gLeftButton and not gRightButton:
             #Z plus transition
-            nM[2][3] = 0.1
-        elif key == glfw.KEY_A and gLeftButton and not gRightButton:
+            nM[2][3] = 0.3
+        elif key == glfw.KEY_D and gLeftButton and not gRightButton:
             #Y axis minus Rotation
             th = np.radians(-10)
             nM[:3, :3] = [[np.cos(th), 0, np.sin(th)],
                           [0, 1, 0],
                           [-np.sin(th), 0, np.cos(th)]]
-        elif key == glfw.KEY_D and gLeftButton and not gRightButton:
+            th = np.radians(-10)
+            cM[:3, :3] = [[np.cos(th), 0, np.sin(th)],
+                          [0, 1, 0],
+                          [-np.sin(th), 0, np.cos(th)]]
+        elif key == glfw.KEY_A and gLeftButton and not gRightButton:
             #Y axis plus Rotation
             th = np.radians(10)
             nM[:3, :3] = [[np.cos(th), 0, np.sin(th)],
+                         [0, 1, 0],
+                         [-np.sin(th), 0, np.cos(th)]]
+            th = np.radians(10)
+            cM[:3, :3] = [[np.cos(th), 0, np.sin(th)],
                          [0, 1, 0],
                          [-np.sin(th), 0, np.cos(th)]]
         elif key == glfw.KEY_S and gLeftButton and not gRightButton:
@@ -337,10 +376,18 @@ def key_callback(window, key, scancode, action, mods):
             nM[:3, :3] = [[1, 0, 0],
                          [0, np.cos(th), -np.sin(th)],
                          [0, np.sin(th), np.cos(th)]]
+            th = np.radians(10)
+            cM[:3, :3] = [[1, 0, 0],
+                         [0, np.cos(th), -np.sin(th)],
+                         [0, np.sin(th), np.cos(th)]]
         elif key == glfw.KEY_W and gLeftButton and not gRightButton:
             #X axis plus Rotation
             th = np.radians(10)
             nM[:3, :3] = [[1, 0, 0],
+                         [0, np.cos(th), -np.sin(th)],
+                         [0, np.sin(th), np.cos(th)]]
+            th = np.radians(-10)
+            cM[:3, :3] = [[1, 0, 0],
                          [0, np.cos(th), -np.sin(th)],
                          [0, np.sin(th), np.cos(th)]]
         elif key == glfw.KEY_Q and gLeftButton and not gRightButton:
@@ -349,10 +396,18 @@ def key_callback(window, key, scancode, action, mods):
             nM[:3, :3] = [[np.cos(th), -np.sin(th), 0],
                          [np.sin(th), np.cos(th), 0],
                          [0, 0, 1]]
+            th = np.radians(10)
+            cM[:3, :3] = [[np.cos(th), -np.sin(th), 0],
+                         [np.sin(th), np.cos(th), 0],
+                         [0, 0, 1]]
         elif key == glfw.KEY_E and gLeftButton and not gRightButton:
             #Z axis plus Rotation
             th = np.radians(10)
             nM[:3, :3] = [[np.cos(th), -np.sin(th), 0],
+                         [np.sin(th), np.cos(th), 0],
+                         [0, 0, 1]]
+            th = np.radians(-10)
+            cM[:3, :3] = [[np.cos(th), -np.sin(th), 0],
                          [np.sin(th), np.cos(th), 0],
                          [0, 0, 1]]
         elif key == glfw.KEY_A and not gLeftButton and gRightButton:
@@ -386,14 +441,16 @@ def key_callback(window, key, scancode, action, mods):
             gComposedM[2][3] = gComposedM[2][3] * -1
         elif key == glfw.KEY_V :
             gtoggle[0] = not gtoggle[0]
+
         gComposedM = gComposedM @ nM
+        cameraM = cameraM @ cM
 
         
 def draw_imageA():
     global varr, narr, tarr, qarr, marr 
     
     #Open obj file
-    f = open('./obj/cube-tri.obj', 'r')
+    f = open('./obj/LowPolyFiatUNO.obj', 'r')
 
     while True:
         line = f.readline()
@@ -450,7 +507,7 @@ def draw_imageB():
     global aarr, barr, carr, darr, earr 
     
     #Open obj file
-    f = open('./obj/cylinder-tri.obj', 'r')
+    f = open('./obj/LowPolyFiatUNO.obj', 'r')
 
     while True:
         line = f.readline()
@@ -505,7 +562,7 @@ def draw_imageC():
     global farr, garr, harr, iarr, jarr 
     
     #Open obj file
-    f = open('./obj/sphere-tri.obj', 'r')
+    f = open('./obj/Futuristic_Car_2.1_obj.obj', 'r')
 
     while True:
         line = f.readline()
